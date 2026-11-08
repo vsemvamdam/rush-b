@@ -3,13 +3,15 @@ import { Spinner } from '../components/ui';
 import { href, setQuery, useRoute } from '../lib/router';
 import { loadLpLogos, loadTeamIndex, teamKeys, useTeamLogos, useTeamSlug, type TeamIndex } from '../lib/teams';
 import { countryFromFlag, countryRu, flagUrl, ROLE_RU } from '../lib/people';
+import TeamNews from '../components/TeamNews';
 import '../styles/team.css';
 
 /* Team page: everything we know about a team.
    matches since 2021 + titles — public/data/teams/<slug>.json (tools/teams/build_teams.py, Liquipedia pages)
    location, founded, staff, links — public/data/teams/info.json (scripts/fetch-logos.mjs, Liquipedia infobox)
    world rank + roster — rankings.json (Valve Regional Standings); player stats — players/index.json (our demos)
-   next match — esports.json (esports-data branch, updated every 20 min) */
+   next match — esports.json (esports-data branch, updated every 20 min)
+   news — t/<slug>.json in the news-data branch (scripts/fetch-news.mjs, every 20 min) */
 
 type MatchRow = [number, string, number, number, [string, number, number][], string, string, string, number | null, number | null];
 type TeamFile = { name: string; page: string; m: MatchRow[]; titles: [number, string, string, string][] };
@@ -52,6 +54,18 @@ const dateRu = (iso?: string) => {
   return d ? `${d}.${m}.${y}` : m ? `${m}.${y}` : y;
 };
 const HUE = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h % 360; };
+/** two columns (same breakpoint as .tm-grid in team.css) */
+function useWide(q = '(min-width: 1001px)') {
+  const [m, set] = useState(() => (typeof matchMedia === 'function' ? matchMedia(q).matches : true));
+  useEffect(() => {
+    const mq = matchMedia(q);
+    const f = () => set(mq.matches);
+    f();
+    mq.addEventListener('change', f);
+    return () => mq.removeEventListener('change', f);
+  }, [q]);
+  return m;
+}
 
 export default function Team({ slug }: { slug: string }) {
   const [file, setFile] = useState<TeamFile | null | undefined>(undefined);
@@ -66,6 +80,7 @@ export default function Team({ slug }: { slug: string }) {
   const [es, setEs] = useState<EsMatch[]>([]);
   const [extra, setExtra] = useState<Record<string, PInfo & { team?: string }>>({});
   const logo = useTeamLogos();
+  const wide = useWide();
   useEffect(() => {
     setFile(undefined);
     getJSON<TeamFile>(`${DATA}teams/${encodeURIComponent(slug)}.json`).then(setFile);
@@ -112,6 +127,14 @@ export default function Team({ slug }: { slug: string }) {
   const mw = mapsYear.filter((x) => x[1] > x[2]).length, ml = mapsYear.filter((x) => x[1] < x[2]).length;
   const titlesYear = T.titles.filter((t) => t[0] > now - 365 * 86400).length;
   const linkList = LINK_RU.filter(([k]) => inf.links?.[k]);
+  const people: Record<string, string> = {};
+  for (const x of [...(inf.squad || []), ...(inf.standins || [])]) if (x.sid && !x.role) people[x.id.toLowerCase()] ||= x.sid;
+  if (pix) { // players our demos know (same lookup as the roster cards)
+    const [iS, iN, iT] = ['sid', 'name', 'team'].map((k) => pix.cols.indexOf(k));
+    for (const r of pix.rows) { const n = String(r[iN]).toLowerCase(); if (isUs(String(r[iT] || '')) && !people[n]) people[n] = String(r[iS]); }
+  }
+  // news: next to the roster on a phone, at the top of the side column on a wide screen
+  const news = <TeamNews slug={slug} name={name} people={people} />;
 
   return (
     <div className="tm stack" style={{ gap: 18 }}>
@@ -146,9 +169,11 @@ export default function Team({ slug }: { slug: string }) {
         <div className="stack" style={{ gap: 18, minWidth: 0 }}>
           {next && <NextMatch m={next} isUs={isUs} logo={logo} />}
           <Roster teamName={name} rank={ranked} squad={inf.squad} standins={inf.standins} pix={pix} links={links} extra={extra} avatars={avatars} photos={photos} isUs={isUs} />
+          {!wide && news}
           <Matches file={T} logo={logo} />
         </div>
         <div className="stack" style={{ gap: 18, minWidth: 0 }}>
+          {wide && news}
           {inf.staff?.length ? (
             <section className="tm-card">
               <h3 className="tm-h">Тренерский штаб</h3>
@@ -179,7 +204,7 @@ export default function Team({ slug }: { slug: string }) {
           </section>
         </div>
       </div>
-      <p className="tiny muted">Матчи, титулы и сведения о команде — <a className="link" href="https://liquipedia.net/counterstrike/" target="_blank" rel="noreferrer">Liquipedia</a> (CC BY-SA 3.0, турниры S/A/B-уровня с 2021 года); рейтинг — Valve Regional Standings; статистика игроков — наши турнирные демки. Логотипы и фото принадлежат командам, игрокам и авторам снимков и показаны только для узнаваемости.</p>
+      <p className="tiny muted">Матчи, титулы и сведения о команде — <a className="link" href="https://liquipedia.net/counterstrike/" target="_blank" rel="noreferrer">Liquipedia</a> (CC BY-SA 3.0, турниры S/A/B-уровня с 2021 года); рейтинг — Valve Regional Standings; статистика игроков — наши турнирные демки; новости — заголовки и ссылки из RSS-лент изданий, тексты принадлежат их авторам. Логотипы и фото принадлежат командам, игрокам и авторам снимков и показаны только для узнаваемости.</p>
     </div>
   );
 }

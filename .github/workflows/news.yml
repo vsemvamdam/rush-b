@@ -1,0 +1,57 @@
+name: Новости команд
+
+# Заголовки новостей CS2 из RSS (Cybersport.ru, Sports.ru, HLTV, Dust2.us) → колонка «Новости» на страницах
+# команд. Новость привязывается к команде, если в заголовке есть её название, ник игрока или тренера
+# (составы — с опубликованного сайта: data/teams/info.json и rankings.json). Публикуются только заголовки и
+# ссылки. Результат force-push'ем кладётся единственным коммитом в сиротскую ветку news-data
+# (t/<команда>.json), сайт читает её с raw.githubusercontent.com без пересборки Pages.
+on:
+  schedule:
+    - cron: '11,31,51 * * * *'   # каждые 20 минут
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/fetch-news.mjs'
+      - 'scripts/lib/news/**'
+      - '.github/workflows/news.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: news
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Предыдущие данные (ветка news-data)
+        run: |
+          mkdir -p news-prev
+          if git fetch -q --depth=1 origin news-data 2>/dev/null; then
+            git show FETCH_HEAD:all.json > news-prev/all.json || true
+            git show FETCH_HEAD:catalog.json > news-prev/catalog.json || true
+          else
+            echo "ветки news-data ещё нет — начинаю с нуля"
+          fi
+      - name: Новости
+        run: node scripts/fetch-news.mjs --prev news-prev --out news-out
+      - name: Опубликовать в ветку news-data
+        run: |
+          node -e "const d=require('./news-out/all.json'); if(d.v!==1||!Array.isArray(d.items)) process.exit(1)"
+          cd news-out
+          git init -q -b news-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config http.https://github.com/.extraheader "$(git -C .. config http.https://github.com/.extraheader)"
+          git add -A
+          git commit -q -m "Новости $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push -q -f "https://github.com/${{ github.repository }}.git" news-data
+          echo "опубликовано: $(ls t | wc -l) команд, $(du -sh . --exclude=.git | cut -f1)"

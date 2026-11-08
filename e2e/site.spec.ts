@@ -171,6 +171,35 @@ test('F09-H3 Vitality: карты за 3/6/12 месяцев и титулы', a
   g.check();
 });
 
+test('F09-H4 Vitality: колонка «Новости» — дни, источники, ники игроков, фильтр языка, пустое состояние', async ({ page }) => {
+  const g = guard(page);
+  const now = Math.round(Date.now() / 1000);
+  const news = {
+    v: 1, updated: now - 300,
+    src: { cybersport: ['Cybersport.ru', 'ru'], hltv: ['HLTV', 'en'] },
+    items: [
+      { t: 'Mezii о новом сезоне', u: 'https://www.cybersport.ru/tags/cs2/test-1', s: 'cybersport', ts: now - 3600, p: ['mezii'] },
+      { t: 'Vitality win the event', u: 'https://www.hltv.org/news/1/test-2', s: 'hltv', ts: now - 3 * 86400 },
+    ],
+  };
+  await page.route(/news-data\/t\/team-vitality\.json/, (r) => r.fulfill({ json: news }));
+  await page.route(/news-data\/t\/team-spirit\.json/, (r) => r.fulfill({ status: 404, body: '404: Not Found' }));
+  await page.goto('#/team/team-vitality');
+  const card = page.locator('.tm-news');
+  await expect(card.locator('#tm-news-h')).toHaveText('Новости');
+  await expect(card.locator('.tm-nw')).toHaveCount(2);
+  await expect(card.locator('.tm-nw-day').first()).toHaveText(/Сегодня/i);
+  const link = card.getByRole('link', { name: 'Mezii о новом сезоне' });
+  await expect(link).toHaveAttribute('target', '_blank');
+  await expect(card.getByRole('link', { name: 'mezii', exact: true })).toHaveAttribute('href', /#\/player\/7656\d{13}/);
+  await card.getByRole('button', { name: 'EN', exact: true }).click();
+  await expect(card.locator('.tm-nw')).toHaveCount(1);
+  await expect(card).toContainText('HLTV');
+  await page.goto('#/team/team-spirit');
+  await expect(page.locator('.tm-news')).toContainText(/новостей .* пока нет/);
+  g.check();
+});
+
 // F10 — player pages
 test('F10-H1 игрок без демок (jL): профиль с Liquipedia', async ({ page }) => {
   const g = guard(page);

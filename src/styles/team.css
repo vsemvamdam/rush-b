@@ -112,3 +112,25 @@ a.tm-player:hover .tm-nick { color: var(--accent); }
 a.tm-sub:hover b { color: var(--accent); }
 .tm-staff-photo { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; object-position: 50% 15%; flex: none; box-shadow: 0 0 0 1px var(--border); }
 .tm-pill.sub { background: color-mix(in srgb, var(--accent) 16%, transparent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); color: var(--accent); }
+
+/* news column */
+.tm-nw-list { display: flex; flex-direction: column; }
+.tm-nw-day { padding: 14px 20px 6px; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+.tm-nw { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; padding: 9px 20px 11px; border-bottom: 1px solid var(--border); transition: background .12s; }
+.tm-nw-list > div:last-of-type .tm-nw { border-bottom: 0; }
+.tm-nw:hover { background: var(--surface-2); }
+.tm-nw-time { color: var(--faint); font-size: 12px; padding-top: 2px; position: relative; }
+.tm-nw-time.new { color: var(--accent); }
+.tm-nw-time.new::before { content: ''; position: absolute; left: -11px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.tm-nw-body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.tm-nw-t { color: var(--text); font-size: 14.5px; line-height: 1.38; font-weight: 550; overflow-wrap: anywhere; }
+.tm-nw-t:hover { color: var(--accent); }
+.tm-nw-t:visited { color: var(--muted); }
+.tm-nw-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 12px; color: var(--faint); }
+.tm-nw-tag { font-style: normal; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; padding: 0 6px; border-radius: 4px; background: var(--surface-3); color: var(--muted); line-height: 17px; }
+.tm-nw-tag.p { letter-spacing: 0; font-weight: 600; background: var(--accent-soft); color: var(--accent); }
+a.tm-nw-tag.p:hover { background: var(--accent); color: var(--accent-ink); }
+.tm-nw-empty { padding: 18px 20px; margin: 0; }
+.tm-nw-empty .spinner { margin: 4px auto; width: 22px; height: 22px; }
+.tm-nw-foot { margin: 0; padding: 10px 20px 14px; border-top: 1px solid var(--border); }
+.tm-news .tm-more { margin-top: 10px; }
