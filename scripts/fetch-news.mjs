@@ -5,8 +5,8 @@
 //
 // <prev>/all.json and <prev>/catalog.json are the previous run's output (branch news-data): news are kept
 //   for KEEP_DAYS, so a team page shows weeks of headlines although each feed holds only the last day or two.
-// --site  the published site; its data/teams/index.json, data/teams/info.json and data/rankings.json give the
-//         teams, their names and rosters (default https://vsemvamdam.github.io/cs2-craft/). --data reads the same
+// --site  the published site; its data/teams/index.json, data/teams/info.json, data/rankings.json and
+//         data/teams/people.json give the teams, their names, rosters and recent former players (default https://vsemvamdam.github.io/cs2-craft/). --data reads the same
 //         files from a local folder instead (public/data after a local build).
 // --feeds local copies of the feeds as <source key>.xml (tests, offline runs).
 //
@@ -58,8 +58,10 @@ async function siteJSON(rel) {
 const prev = await readJSON(path.join(PREV, 'all.json'), {});
 let catalog = null;
 try {
-  const [index, info, rankings] = await Promise.all([siteJSON('teams/index.json'), siteJSON('teams/info.json'), siteJSON('rankings.json').catch(() => null)]);
-  catalog = buildCatalog(index, info, rankings, NOW);
+  const [index, info, rankings, people] = await Promise.all([
+    siteJSON('teams/index.json'), siteJSON('teams/info.json'), siteJSON('rankings.json').catch(() => null), siteJSON('teams/people.json').catch(() => null),
+  ]);
+  catalog = buildCatalog(index, info, rankings, NOW, people);
   log(`каталог: ${Object.keys(catalog.teams).length} команд, ${catalog.forms.length} названий, ${catalog.nicks.length} ников`);
 } catch (e) {
   catalog = await readJSON(path.join(PREV, 'catalog.json'));
@@ -70,6 +72,17 @@ try {
 // ── 2. feeds ─────────────────────────────────────────────────────────────
 const known = new Map((prev.items || []).filter((x) => x.ts > NOW - KEEP_DAYS * DAY).map((x) => [x.id, x]));
 const urls = new Set([...known.values()].map((x) => x.u));
+// headlines of earlier runs are matched again with today's rosters (a transfer, a new team page); the teams their
+// descriptions added (w) stay — descriptions are not stored
+const LANG = Object.fromEntries(SOURCES.map((s) => [s.key, s.lang]));
+let rematched = 0;
+for (const it of known.values()) {
+  const tm = matchItem({ title: it.t, desc: '' }, LANG[it.s] || 'ru', catalog);
+  for (const [s, m] of Object.entries(it.tm || {})) if (m.w && !tm[s]) tm[s] = m;
+  if (JSON.stringify(Object.keys(tm).sort()) !== JSON.stringify(Object.keys(it.tm || {}).sort())) rematched++;
+  it.tm = tm;
+}
+if (rematched) log(`прошлые заголовки: команды поменялись у ${rematched}`);
 const sources = {};
 let added = 0;
 for (const src of SOURCES) {

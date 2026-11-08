@@ -10,6 +10,9 @@ Source: Liquipedia (CC BY-SA 3.0) tournament pages already downloaded by scripts
                                         tier, lan (1/0/null), bo]] newest first, titles: [[ts, tournament, tour page, tier]] }
   teams/need.json   { teams: [names whose logos are wanted], tours: [tournament pages whose icons are wanted],
                       pages: [team pages to read the infobox of] }  — for scripts/fetch-logos.mjs
+  teams/people.json { updated, p: { nick: [slug, "YYYY-MM-DD"] } } — the team each player / coach last played a
+                      tournament for (TeamCard lineups, last two years): news about a player who just left or
+                      retired still reach his team's page (scripts/fetch-news.mjs)
 """
 from __future__ import annotations
 
@@ -77,6 +80,32 @@ def page_meta(hist: Path) -> dict[str, dict]:
             meta[title] = {"name": clean(ib.get("name")) or title, "tier": TIER_NUM.get(tier, tier[:1].upper()),
                            "tiertype": clean(ib.get("liquipediatiertype")), "end": (re.search(r"\d{4}-\d\d-\d\d", ib.get("edate") or ib.get("date") or "") or [""])[0]}
     return meta
+
+
+TEAMCARD = re.compile(r"\{\{TeamCard\b(?!\s*columns|Toggle)(.*?)\}\}", re.S)
+
+
+def last_teams(hist: Path, meta: dict) -> dict[str, tuple[str, str]]:
+    """nick → (date, team page) of the latest tournament lineup ({{TeamCard}}) with the player or coach"""
+    last: dict[str, tuple[str, str]] = {}
+    for f in (hist / "raw").glob("*.json"):
+        j = json.loads(f.read_text())
+        for title, c in j.get("titles", {}).items():
+            end = (meta.get(title) or {}).get("end") or ""
+            if not re.fullmatch(r"\d{4}-\d\d-\d\d", end):
+                continue
+            for m in TEAMCARD.finditer(c.get("content") or ""):
+                prm = dict((k, v.strip()) for k, v in re.findall(r"\|\s*([a-z0-9]+)\s*=([^|\n{}]*)", m.group(1)))
+                team = re.sub(r"\[\[(?:[^|\]]*\|)?([^\]]+)\]\]", r"\1", prm.get("team", "")).strip()
+                if not team:
+                    continue
+                for k in ("p1", "p2", "p3", "p4", "p5", "p6", "p7", "c"):
+                    nick = prm.get(k, "")
+                    if not nick or prm.get(k + "team") or not re.fullmatch(r"[\w.\-]{2,24}", nick):
+                        continue  # empty, a stand-in from another team, or not a plain nickname
+                    if nick not in last or last[nick][0] < end:
+                        last[nick] = (end, team)
+    return last
 
 
 NOT_TITLE = re.compile(r"qualif|stage \d|/stage|group|play-?in|/open(/\d+)?$|closed|showmatch|last chance|decider|swiss|elimination stage|opening stage|challengers stage|legends stage|\brmr\b|/(europe|americas|asia|oceania)\b", re.I)
@@ -170,8 +199,15 @@ def main():
             need_tours.update(m[6] for m in recent[:60])
             need_tours.update(t[2] for t in tl)
     (out / "index.json").write_text(json.dumps({"updated": dt.datetime.now(dt.timezone.utc).isoformat(), "src": "Liquipedia (CC BY-SA 3.0)", "k": keys, "t": index}, ensure_ascii=False, separators=(",", ":")))
+    since_people = (today - dt.timedelta(days=730)).isoformat()
+    people = {}
+    for nick, (end, team) in sorted(last_teams(hist, meta).items()):
+        sl = next((keys[k] for k in team_keys(team) if k in keys), None)
+        if sl and end >= since_people:
+            people[nick] = [sl, end]
+    (out / "people.json").write_text(json.dumps({"updated": dt.datetime.now(dt.timezone.utc).isoformat(), "src": "Liquipedia (CC BY-SA 3.0)", "p": people}, ensure_ascii=False, separators=(",", ":")))
     (out / "need.json").write_text(json.dumps({"teams": sorted(need_teams), "tours": sorted(need_tours), "pages": need_pages[:400]}, ensure_ascii=False))
-    print(f"команды: {len(index)} страниц, матчей с {a.since}: {len(df)}, титулов: {sum(len(v) for v in titles.values())}; разбор: {stats}")
+    print(f"команды: {len(index)} страниц, матчей с {a.since}: {len(df)}, титулов: {sum(len(v) for v in titles.values())}, игроков с последней командой: {len(people)}; разбор: {stats}")
 
 
 if __name__ == "__main__":

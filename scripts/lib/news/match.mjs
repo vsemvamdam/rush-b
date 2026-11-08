@@ -2,7 +2,9 @@
 //
 // Catalog = teams of the site (public/data/teams/index.json) that played in the last year or are in the Valve
 // ranking, with the names they go by in the press, plus the nicknames of their players and coaches
-// (Liquipedia squads from teams/info.json, Valve ranking rosters). A news item belongs to a team when its
+// (Liquipedia squads from teams/info.json, Valve ranking rosters) and of people who left them recently — a player
+// with no current team belongs to the team of his last tournament (teams/people.json), so "chopper retires"
+// still reaches Team Spirit. A news item belongs to a team when its
 // title names the team or one of its people; the description (never published, used only here) can add
 // teams when it names at most three of them — a tournament recap that lists ten teams is about none.
 
@@ -41,6 +43,13 @@ winter cologne katowice beijing singapore austin shanghai budapest copenhagen pa
 krakow stockholm antwerp rotterdam london berlin moscow kyiv perfect adr kast rating kd hs fps ping cfg config stream streamer stats stat
 demo bot bots rank elo eac vac`.split(/\s+/));
 const SHORT_OK = new Set(['OG']); // two-letter tags that are well-known teams
+// nicknames that are ordinary English words: a headline using them is not about the player
+const WORDS = new Set(`alpha avid bones brain bright bubble bullet calamity card carnage caustic chop corn crush cube cyclone dare deco
+destiny device disturbed divine drop empathy executor exit fame fear flash fluffy flying goddess grape grizzly groove handless hardstyle
+hoax honda hyped innocent kodak koala lash madness magic milky mixer nacho newt ninja noway pack pepe pixel rage rain rate reason replay
+risk robo rock shady sherman shield shinobi slip slump snow somebody spike spiker stamina steel sterling story strix supra tele turbo
+twist ultimate vision volt whisper wild fire storm sunny happy lucky smile simple`.split(/\s+/));
+const FORMER_DAYS = 548; // a player counts for the team of his last tournament for 1.5 years
 
 const LATIN = /[A-Za-z0-9]/;
 const TOP = 60; // teams of the Valve top-60: their one-word names ("Aurora", "Legacy") count in English headlines too
@@ -71,7 +80,7 @@ function okNick(n) {
   if (!n || !/^[A-Za-z0-9_.\-]+$/.test(n) || /^\d+$/.test(n)) return false;
   const len = n.length;
   if (len < 2 || (len < 3 && !/\d/.test(n))) return false;
-  return !STOP.has(n.toLowerCase());
+  return !STOP.has(n.toLowerCase()) && !WORDS.has(n.toLowerCase());
 }
 
 /**
@@ -79,8 +88,9 @@ function okNick(n) {
  * @param {{k: Record<string,string>, t: [string,string,number,number,number][]}} index teams/index.json
  * @param {Record<string, any>} info teams/info.json (Liquipedia page → infobox)
  * @param {{teams: [number,number,string,string[],string,number,number][]}} rankings rankings.json
+ * @param {{p: Record<string, [string, string]>}} [lastTeams] teams/people.json: nick → [slug, date of the last tournament]
  */
-export function buildCatalog(index, info, rankings, nowSec = Date.now() / 1000) {
+export function buildCatalog(index, info, rankings, nowSec = Date.now() / 1000, lastTeams = null) {
   const slugOf = (name) => { for (const k of teamKeys(name || '')) if (index.k[k]) return index.k[k]; return null; };
   const byslug = new Map(index.t.map((t) => [t[0], t]));
   const rank = new Map();
@@ -108,6 +118,15 @@ export function buildCatalog(index, info, rankings, nowSec = Date.now() / 1000) 
     ]);
     for (const n of people) if (okNick(n) && !formsLower.has(n.toLowerCase())) add(nicks, n, s);
   }
+  // people without a current team: the team of their last tournament (never over someone's current team)
+  const taken = new Set([...nicks.keys()].map((n) => n.toLowerCase()));
+  const since = new Date((nowSec - FORMER_DAYS * 86400) * 1000).toISOString().slice(0, 10);
+  const inU = new Set(universe);
+  for (const [n, [s, date]] of Object.entries(lastTeams?.p || {})) {
+    if (date < since || !inU.has(s) || taken.has(n.toLowerCase()) || !okNick(n) || formsLower.has(n.toLowerCase())) continue;
+    nicks.set(n, s);
+    taken.add(n.toLowerCase());
+  }
   return {
     v: 1,
     teams: Object.fromEntries(universe.map((s) => [s, byslug.get(s)[1]])),
@@ -128,7 +147,9 @@ function compile(catalog) {
   }
   for (const [nick, slug] of catalog.nicks) {
     const distinct = /\d/.test(nick) || hasUpperInside(nick) || (nick.length >= 4 && nick === nick.toUpperCase());
-    pats.push({ s: nick, l: nick.toLowerCase(), slug, kind: 'nick', ci: { ru: nick.length >= 4, en: false }, en: distinct });
+    // English: "xelex: …", "chopper announces retirement" — a lowercase nickname written lowercase in a headline
+    const en = distinct || (nick.length >= 4 && /^[a-z]+$/.test(nick) ? 'title' : false);
+    pats.push({ s: nick, l: nick.toLowerCase(), slug, kind: 'nick', ci: { ru: nick.length >= 4, en: false }, en });
     // a headline starts with a capital: "B1t об IEM…" for b1t
     if (nick.length === 3 && /^[a-z]/.test(nick)) pats.push({ s: nick[0].toUpperCase() + nick.slice(1), l: '', slug, kind: 'nick', ci: { ru: false, en: false }, en: distinct, as: nick });
   }
@@ -136,11 +157,11 @@ function compile(catalog) {
 }
 const cache = new WeakMap();
 
-function findAll(text, lang, pats) {
+function findAll(text, lang, pats, inTitle) {
   const lower = text.toLowerCase();
   const hits = [];
   for (const p of pats) {
-    if (lang === 'en' && !p.en) continue;
+    if (lang === 'en' && (!p.en || (p.en === 'title' && !inTitle))) continue;
     const ci = p.ci[lang];
     const hay = ci ? lower : text;
     const needle = ci ? p.l : p.s;
@@ -174,8 +195,8 @@ export function matchItem({ title, desc }, lang, catalog) {
   if (!pats) cache.set(catalog, (pats = compile(catalog)));
   const strong = new Map(), weak = new Map();
   const put = (m, h) => { const e = m.get(h.p.slug) || new Set(); if (h.p.kind === 'nick') e.add(h.p.as || h.p.s); m.set(h.p.slug, e); };
-  for (const h of findAll(title || '', lang, pats)) put(strong, h);
-  for (const h of findAll(desc || '', lang, pats)) put(weak, h);
+  for (const h of findAll(title || '', lang, pats, true)) put(strong, h);
+  for (const h of findAll(desc || '', lang, pats, false)) put(weak, h);
   const all = new Set([...strong.keys(), ...weak.keys()]);
   const out = {};
   for (const [s, ps] of strong) {

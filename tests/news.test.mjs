@@ -14,7 +14,7 @@ import { SOURCES } from '../scripts/lib/news/sources.mjs';
 const FIX = path.join(import.meta.dirname, 'fixtures', 'news');
 const data = (f) => JSON.parse(fs.readFileSync(path.join(FIX, 'data', f), 'utf8'));
 const NOW = 1794132000; // 2026-11-08
-const catalog = buildCatalog(data('teams/index.json'), data('teams/info.json'), data('rankings.json'), NOW);
+const catalog = buildCatalog(data('teams/index.json'), data('teams/info.json'), data('rankings.json'), NOW, data('teams/people.json'));
 const teams = (title, lang = 'ru', desc = '') => matchItem({ title, desc }, lang, catalog);
 
 test('dates: RFC 822 with two-digit years, zones, ISO', () => {
@@ -59,11 +59,19 @@ test('catalog: active teams, press names, rosters', () => {
   assert.equal(nicks.get('xertioN'), 'mouz'); // Valve ranking roster
   assert.equal(nicks.has('iM'), false); // two letters — too short to find in text
   assert.equal(nicks.has('PR'), false);
+  // people without a current team: the team of their last tournament, for 1.5 years
+  assert.equal(nicks.get('chopper'), 'team-spirit');
+  assert.equal(nicks.get('zweih'), 'team-spirit');
+  assert.equal(nicks.has('oldguy'), false); // last played in 2023
+  assert.equal(nicks.get('donk'), 'team-spirit'); // a current roster beats an old lineup
+  assert.equal(nicks.has('rain'), false); // an English word
+  assert.equal(nicks.has('Hooch'), false); // his last team is not on the site any more
 });
 
 test('headlines in Russian: team names and nicknames, Latin inside Cyrillic', () => {
-  assert.deepEqual(teams('Chopper завершил карьеру: «Vega и Spirit для меня стали больше, чем клубами»'), { 'team-spirit': {} });
-  assert.deepEqual(teams('Chopper официально покинул Team Spirit'), { 'team-spirit': {} });
+  assert.deepEqual(teams('Chopper завершил карьеру: «Vega и Spirit для меня стали больше, чем клубами»'), { 'team-spirit': { p: ['chopper'] } });
+  assert.deepEqual(teams('Chopper официально покинул Team Spirit'), { 'team-spirit': { p: ['chopper'] } });
+  assert.deepEqual(teams('Hooch о chopper: «Он оставил огромный след»'), { 'team-spirit': { p: ['chopper'] } });
   assert.deepEqual(teams('Team Spirit Academy вышла в финал'), { 'team-spirit-academy': {} });
   assert.deepEqual(teams('Donk о подготовке'), { 'team-spirit': { p: ['donk'] } });
   assert.deepEqual(teams('B1t об IEM Beijing 2026'), { 'natus-vincere': { p: ['b1t'] } });
@@ -76,10 +84,14 @@ test('headlines in Russian: team names and nicknames, Latin inside Cyrillic', ()
 });
 
 test('headlines in English: plain words are not team names', () => {
-  assert.deepEqual(teams('chopper announces retirement', 'en', 'The former Spirit in-game leader calls time on his career.'), { 'team-spirit': { w: 1 } });
+  assert.deepEqual(teams('chopper announces retirement', 'en', 'The former Spirit in-game leader calls time on his career.'), { 'team-spirit': { p: ['chopper'] } });
+  assert.deepEqual(teams('xelex: "I\'m not at my best on stage"', 'en'), { mouz: { p: ['xelex'] } }); // lowercase nick, as written
+  assert.deepEqual(teams('Recap', 'en', 'xelex and chopper were mentioned'), {}); // …only in headlines
+  assert.deepEqual(teams('Xelex said', 'en'), {});
   assert.deepEqual(teams('Echo of a legacy: what the big Major changes mean', 'en'), {});
   assert.deepEqual(teams('Legacy and BIG advance', 'en'), { legacy: {}, big: {} });
-  assert.deepEqual(teams('donk and ZywOo top the ranking', 'en'), { 'team-vitality': { p: ['ZywOo'] } }); // lowercase nick = maybe a word
+  assert.deepEqual(teams('donk and ZywOo top the ranking', 'en'), { 'team-spirit': { p: ['donk'] }, 'team-vitality': { p: ['ZywOo'] } });
+  assert.deepEqual(teams('Rain delays the final', 'en'), {});
   assert.deepEqual(teams('Team Spirit sign a coach', 'en'), { 'team-spirit': {} });
 });
 
@@ -94,6 +106,7 @@ test('fetch-news: feeds → per-team files, state carried between runs, a broken
     ['sportsru', 'Donk рассказал о подготовке к мейджору'],
     ['hltv', 'chopper announces retirement'],
   ]);
+  assert.deepEqual(spirit.items[0].p, ['chopper']);
   assert.ok(spirit.items.every((x) => /^https:\/\//.test(x.u) && x.ts > 1794000000 && !('desc' in x)));
   assert.deepEqual(spirit.src.hltv, ['HLTV', 'en']);
   const all = JSON.parse(fs.readFileSync(path.join(tmp, 'a', 'all.json'), 'utf8'));
@@ -102,5 +115,13 @@ test('fetch-news: feeds → per-team files, state carried between runs, a broken
   assert.ok(!JSON.stringify(all).includes('Вишняков'), 'descriptions are not published');
   const log2 = run(path.join(tmp, 'a'), path.join(tmp, 'b'));
   assert.match(log2, /новых 0, всего 6/);
+  // an older headline with no team gets one when the rosters know more now
+  const a = JSON.parse(fs.readFileSync(path.join(tmp, 'b', 'all.json'), 'utf8'));
+  a.items.push({ id: 'old1', s: 'hltv', t: 'xelex: "a quote"', u: 'https://www.hltv.org/news/0/old', ts: 1794100000, tm: {} });
+  fs.writeFileSync(path.join(tmp, 'b', 'all.json'), JSON.stringify(a));
+  const log3 = run(path.join(tmp, 'b'), path.join(tmp, 'c'));
+  assert.match(log3, /команды поменялись у 1/);
+  const mouz = JSON.parse(fs.readFileSync(path.join(tmp, 'c', 't', 'mouz.json'), 'utf8'));
+  assert.ok(mouz.items.some((x) => x.t === 'xelex: "a quote"'));
   fs.rmSync(tmp, { recursive: true, force: true });
 });
