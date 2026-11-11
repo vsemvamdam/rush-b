@@ -19,3 +19,5 @@ public/data/logos/
 public/data/logos.json
 test-results/
 playwright-report/
+tests/.servers-worker.bundle.mjs
+tests/.servers-lib.bundle.mjs

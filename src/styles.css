@@ -76,21 +76,22 @@ main { flex: 1; padding: 24px 0 64px; }
 
 /* header */
 .header { position: sticky; top: 0; z-index: 50; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
-.header-inner { display: flex; align-items: center; gap: 18px; height: 62px; }
+.header-inner { display: flex; align-items: center; gap: 14px; height: 62px; }
 .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: 0.02em; font-size: 17px; white-space: nowrap; }
 .logo-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 15px; font-weight: 900; }
 .nav { display: flex; gap: 2px; align-items: center; }
 .nav-more { position: relative; }
-.nav-more-btn { padding: 7px 11px; border-radius: 8px; color: var(--muted); font-weight: 550; white-space: nowrap; font-size: 14px; background: none; border: 0; cursor: pointer; font-family: inherit; }
+.nav-more-btn { padding: 7px 8px; border-radius: 8px; color: var(--muted); font-weight: 550; white-space: nowrap; font-size: 14px; background: none; border: 0; cursor: pointer; font-family: inherit; }
 .nav-more-btn:hover, .nav-more-btn.active { color: var(--text); background: var(--surface-2); }
 .nav-more-menu { display: none; position: absolute; top: 100%; right: 0; min-width: 170px; padding: 6px; margin-top: 2px; flex-direction: column; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); z-index: 60; }
 .nav-more:hover .nav-more-menu, .nav-more:focus-within .nav-more-menu { display: flex; }
-.nav a { padding: 7px 11px; border-radius: 8px; color: var(--muted); font-weight: 550; white-space: nowrap; font-size: 14px; }
+.nav a { padding: 7px 8px; border-radius: 8px; color: var(--muted); font-weight: 550; white-space: nowrap; font-size: 14px; }
 .nav a:hover { color: var(--text); background: var(--surface-2); }
 .nav a.active { color: var(--text); background: var(--surface-3); }
 .header-tools { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 .btn.menu-btn { display: none; }
-@media (max-width: 1100px) {
+/* nine sections + «Ещё» fit from 1300px; narrower screens get the burger menu */
+@media (max-width: 1300px) {
   .nav { display: none; }
   .nav.open { display: flex; flex-direction: column; align-items: stretch; position: absolute; top: 62px; left: 0; right: 0; background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 16px 16px; max-height: calc(100vh - 62px); overflow: auto; }
   .nav-more-btn { display: none; }

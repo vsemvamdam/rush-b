@@ -1,0 +1,82 @@
+/* «Дуэли»: Cybershoke server browser */
+.srv-hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: end; padding: 22px; border-radius: var(--radius); border: 1px solid var(--border);
+  background: radial-gradient(120% 160% at 0% 0%, color-mix(in srgb, var(--accent) 16%, var(--surface)) 0%, var(--surface) 62%); }
+.srv-lead { max-width: 720px; font-size: 15px; }
+.srv-kpis { display: grid; grid-template-columns: repeat(3, minmax(120px, 1fr)); gap: 10px; }
+.srv-kpis .value.small-v { font-size: 16px; }
+@media (max-width: 900px) { .srv-hero { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .srv-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* mode tiles */
+.srv-modes { display: flex; flex-direction: column; gap: 14px; }
+.srv-group { display: flex; flex-direction: column; gap: 8px; --gc: var(--accent); }
+.srv-group.g-aim { --gc: #e05a4f; }
+.srv-group.g-tactics { --gc: #4f8fe0; }
+.srv-group.g-movement { --gc: #3cb7a3; }
+.srv-group.g-fun { --gc: #a970e8; }
+.srv-group.g-other { --gc: #8b919b; }
+.srv-group-name { display: flex; gap: 10px; align-items: baseline; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.srv-group-name .num { text-transform: none; letter-spacing: 0; font-weight: 500; }
+.srv-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.srv-group.g-duels .srv-tiles { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+.srv-tile { position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; min-height: 70px; padding: 10px 12px; text-align: left; cursor: pointer;
+  border-radius: 11px; border: 1px solid var(--border); color: var(--text); font: inherit;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--gc) 16%, var(--surface)) 0%, var(--surface) 75%);
+  transition: border-color .15s, transform .15s, box-shadow .15s; }
+.srv-group.g-duels .srv-tile { min-height: 92px; }
+.srv-tile:hover { border-color: color-mix(in srgb, var(--gc) 60%, var(--border)); transform: translateY(-1px); }
+.srv-tile.on { border-color: var(--gc); box-shadow: 0 0 0 1px var(--gc) inset, 0 6px 18px color-mix(in srgb, var(--gc) 22%, transparent); }
+.srv-tile.dead { opacity: .55; }
+.srv-tile.tagged { padding-top: 30px; }
+.srv-tile.ext { border-style: dashed; background: var(--surface); }
+.srv-tile-name { font-weight: 750; font-size: 15px; letter-spacing: .01em; line-height: 1.2; }
+.srv-group.g-duels .srv-tile-name { font-size: 18px; }
+.srv-tile-meta { font-size: 12px; color: var(--muted); }
+.srv-tile-meta b { color: var(--text); font-weight: 650; }
+.srv-tile-sub { font-size: 11px; color: var(--faint); }
+.srv-tile-tag { position: absolute; top: 8px; left: 10px; font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; padding: 2px 6px; border-radius: 5px;
+  background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); }
+@media (max-width: 600px) {
+  .srv-tiles, .srv-group.g-duels .srv-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .srv-tile, .srv-group.g-duels .srv-tile { min-height: 64px; padding: 8px 10px; }
+  .srv-group.g-duels .srv-tile-name { font-size: 16px; }
+  .srv-best .srv-actions, .srv-join .srv-actions { min-width: 0; width: 100%; }
+}
+.srv-tile-tag.new { background: color-mix(in srgb, var(--good) 22%, transparent); color: var(--good); }
+
+/* selected mode + filters */
+.srv-mode-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.srv-filters { display: flex; flex-direction: column; gap: 12px; }
+.srv-filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.srv-filter-row .select { max-width: 260px; }
+.srv-filter-row .seg { flex-wrap: wrap; height: auto; }
+.srv-search { flex: 1; min-width: 160px; }
+
+/* quick connect + invite */
+.srv-best, .srv-join { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; padding: 14px 18px; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+.srv-best-label { text-transform: uppercase; letter-spacing: .06em; color: var(--accent); font-weight: 700; }
+.srv-best .srv-actions, .srv-join .srv-actions { min-width: 260px; }
+.srv-join-title { font-size: 18px; }
+.srv-join-act { display: flex; gap: 8px; align-items: center; margin-left: auto; flex-wrap: wrap; }
+
+/* server cards */
+.srv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.srv-card { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); transition: border-color .15s; min-width: 0; }
+.srv-card:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.srv-card.hl { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.srv-card.empty .srv-map { color: var(--muted); }
+.srv-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.srv-flag { width: 20px; height: 14px; border-radius: 2px; object-fit: cover; flex: none; }
+.srv-map { font-weight: 700; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.srv-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: -4px; }
+.srv-fill { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.srv-fill b { color: var(--text); }
+.srv-bar { flex: 1; height: 6px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+.srv-bar span { display: block; height: 100%; border-radius: 99px; background: var(--good); }
+.srv-bar.almost span { background: var(--warn); }
+.srv-bar.full span { background: var(--bad); }
+.srv-actions { display: flex; gap: 6px; align-items: center; }
+.srv-actions .btn.grow { flex: 1; }
+.srv-linkbtn { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; }
+.srv-help p { margin: 0; }

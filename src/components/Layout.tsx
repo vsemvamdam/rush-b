@@ -12,6 +12,7 @@ const NAV = [
   { to: '/callouts', label: 'Коллауты' },
   { to: '/players', label: 'Команды и игроки' },
   { to: '/esports', label: 'Матчи' },
+  { to: '/duels', label: 'Дуэли' },
   { to: '/stats', label: 'Статистика' },
   { to: '/crosshair', label: 'Прицел' },
 ];
@@ -58,7 +59,7 @@ function Search() {
   }, []);
   const go = (to: string) => { navigate(to); setOpen(false); setQ(''); };
   return (
-    <div ref={box} className="header-search" style={{ position: 'relative', width: 'clamp(150px, 16vw, 260px)' }}>
+    <div ref={box} className="header-search" style={{ position: 'relative', width: 'clamp(140px, 13vw, 210px)' }}>
       <input
         className="input"
         style={{ width: '100%' }}

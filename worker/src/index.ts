@@ -10,11 +10,15 @@
  *   GET /api/history?id=<steamid>          → daily snapshots [day, level, xp, games, playtime, cs2]
  *   GET /api/faceit?id=<steamid>           → FACEIT profile of that Steam account: level, ELO, CS2 / CS:GO lifetime
  *                                            stats, last 20 results (official FACEIT Data API, cached 10 min)
+ *   GET /api/servers                       → «Дуэли»: every Cybershoke CS2 server (mode, map, location, players,
+ *                                            ip:port) packed into short rows (cached 20 s, see servers.ts)
  *
  * Every profile that is looked up joins the ladder (D1 table `profiles`); the cron trigger refreshes the
  * stalest ones every 10 minutes, so levels and game counts stay current. The Steam Web API key is a Worker
  * secret (STEAM_API_KEY) and never leaves the server.
  */
+import { CYBERSHOKE_API, slimCybershoke, type ServersPayload } from './servers';
+
 export interface Env {
   DB: D1Database;
   STEAM_API_KEY: string;
@@ -295,6 +299,45 @@ async function faceit(env: Env, raw: string, ctx: ExecutionContext): Promise<Res
   return res;
 }
 
+// ---------------------------------------------------------------------------
+// «Дуэли»: Cybershoke server list (their API allows only their own origin, so the site gets it through here)
+const SERVERS_TTL = 20; // seconds; Cybershoke updates player counts continuously
+const SERVERS_STALE = 3600; // serve the last good list this long if Cybershoke is unreachable
+let srvMem: { at: number; data: ServersPayload } | null = null; // per-isolate copy (the Cache API is a no-op on *.workers.dev)
+let srvPending: Promise<ServersPayload> | null = null; // one upstream request at a time
+
+async function loadServers(): Promise<ServersPayload> {
+  const r = await fetch(CYBERSHOKE_API, {
+    headers: { Accept: 'application/json', 'User-Agent': 'cs2-craft server list (+https://github.com/vsemvamdam/cs2-craft)', Referer: 'https://cybershoke.net/' },
+    cf: { cacheTtl: 0 },
+  });
+  if (!r.ok) throw new HttpError(502, `Cybershoke ответил ${r.status}`);
+  if (!(r.headers.get('content-type') || '').includes('json')) throw new HttpError(502, 'Cybershoke не отдал список серверов');
+  const data = slimCybershoke(await r.json(), Math.floor(Date.now() / 1000));
+  if (!data.list.length) throw new HttpError(502, 'В ответе Cybershoke нет серверов CS2');
+  return data;
+}
+
+async function servers(ctx: ExecutionContext): Promise<Response> {
+  const now = Date.now();
+  if (srvMem && now - srvMem.at < SERVERS_TTL * 1000) return json(srvMem.data, 200, SERVERS_TTL);
+  const cache = caches.default;
+  const key = new Request('https://cache.cs2-craft/servers');
+  const hit = await cache.match(key);
+  if (hit) return new Response(hit.body, { headers: { ...Object.fromEntries(hit.headers), ...CORS, 'X-Cache': 'HIT' } });
+  try {
+    srvPending ||= loadServers().finally(() => { srvPending = null; });
+    const data = await srvPending;
+    srvMem = { at: Date.now(), data };
+    const res = json(data, 200, SERVERS_TTL);
+    ctx.waitUntil(cache.put(key, res.clone()));
+    return res;
+  } catch (e) {
+    if (srvMem && now - srvMem.at < SERVERS_STALE * 1000) return json({ ...srvMem.data, stale: true }, 200, 10);
+    throw e instanceof HttpError ? e : new HttpError(502, 'Не удалось получить список серверов Cybershoke');
+  }
+}
+
 async function ladder(env: Env, url: URL): Promise<Response> {
   const by = LADDER[url.searchParams.get('by') || 'xp'] || LADDER.xp;
   const limit = Math.min(100, Math.max(1, +(url.searchParams.get('limit') || 50)));
@@ -339,6 +382,7 @@ export default {
     if (req.method !== 'GET') return json({ error: 'Только GET' }, 405);
     const url = new URL(req.url);
     try {
+      if (url.pathname === '/api/servers') return await servers(ctx); // needs no keys
       if (!env.STEAM_API_KEY && url.pathname !== '/api/health') throw new HttpError(503, 'Ключ Steam API не настроен');
       switch (url.pathname) {
         case '/api/health': return json({ ok: true, key: !!env.STEAM_API_KEY, faceit: !!env.FACEIT_API_KEY });
@@ -347,7 +391,7 @@ export default {
         case '/api/inventory': return await inventory(env, url.searchParams.get('id') || '', ctx);
         case '/api/ladder': return await ladder(env, url);
         case '/api/history': return await history(env, url.searchParams.get('id') || '');
-        default: return json({ error: 'Нет такого адреса', endpoints: ['/api/profile?id=', '/api/inventory?id=', '/api/ladder?by=xp', '/api/history?id='] }, 404);
+        default: return json({ error: 'Нет такого адреса', endpoints: ['/api/profile?id=', '/api/inventory?id=', '/api/ladder?by=xp', '/api/history?id=', '/api/servers'] }, 404);
       }
     } catch (e) {
       if (e instanceof HttpError) return json({ error: e.message }, e.status);
