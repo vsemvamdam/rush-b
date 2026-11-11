@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { createChart, LineSeries, type UTCTimestamp } from 'lightweight-charts';
 import { Spinner } from '../components/ui';
 import { useAsync, useDB, usePrices } from '../lib/hooks';
-import { href, navigate, setQuery, useRoute } from '../lib/router';
+import { extUrl, href, navigate, setQuery, useRoute } from '../lib/router';
 import { marketName, money, pick, usePrefs, type Flag } from '../lib/prefs';
 import { loadCharms, loadStickers, type Prices } from '../lib/data';
 import {
@@ -64,7 +64,7 @@ function StatsHome() {
   const by = query.get('by') || 'xp';
   const country = query.get('country') || '';
   const page = +(query.get('page') || 0);
-  const lad = useAsync(() => api<Ladder>(`/api/ladder?by=${by}&limit=50&offset=${page * 50}${country ? `&country=${country}` : ''}`), [by, country, page]);
+  const lad = useAsync(() => api<Ladder>(`/api/ladder?by=${encodeURIComponent(by)}&limit=50&offset=${(Math.max(0, Math.trunc(page)) || 0) * 50}${country ? `&country=${encodeURIComponent(country)}` : ''}`), [by, country, page]);
   const L = LADDERS.find((x) => x.k === by) || LADDERS[0];
   return (
     <div className="stack" style={{ gap: 18 }}>
@@ -209,7 +209,7 @@ function Header({ d, onRefresh, loading }: { d: Profile; onRefresh: () => void; 
         </div>
       </div>
       <div className="st-head-actions">
-        <a className="btn small ghost" href={d.url} target="_blank" rel="noreferrer">Steam ↗</a>
+        <a className="btn small ghost" href={extUrl(d.url)} target="_blank" rel="noreferrer">Steam ↗</a>
         <button className="btn small ghost" onClick={onRefresh} disabled={loading}>{loading ? 'Обновляю…' : '↻ Обновить'}</button>
       </div>
     </div>
@@ -506,7 +506,7 @@ function FaceitBlock({ steamid }: { steamid: string }) {
         {games.length > 1 && (
           <div className="seg">{games.map((k) => <button key={k} className={k === cur ? 'on' : ''} onClick={() => setG(k)}>{k === 'cs2' ? 'CS2' : 'CS:GO'}</button>)}</div>
         )}
-        <a className="btn small ghost" href={d.url} target="_blank" rel="noreferrer">Профиль FACEIT ↗</a>
+        <a className="btn small ghost" href={extUrl(d.url)} target="_blank" rel="noreferrer">Профиль FACEIT ↗</a>
       </div>
       <div className="fc-body">
         <div className="fc-id">

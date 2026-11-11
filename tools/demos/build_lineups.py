@@ -26,6 +26,7 @@ import argparse
 import hashlib
 import json
 import math
+import re
 import shutil
 import time
 from collections import Counter, defaultdict
@@ -42,6 +43,13 @@ MIN_N = 3            # a throw seen fewer times is situational, not a lineup
 MAX_DETAIL = 30
 RAW_VERSION = 3
 PLACE_CELL = 64.0
+
+
+def web_url(u) -> str:
+    """Match page link for the site: only http(s). The links come with the demo archive (a third-party dataset)
+    and end up in href on the pages, so anything else («javascript:…», data:, plain text) is dropped."""
+    u = str(u or "").strip()
+    return u if re.match(r"https?://[^\s/?#]", u, re.I) and not re.search(r"[\s<>\"']", u) else ""
 
 
 def now():
@@ -243,7 +251,7 @@ def build(out_dir: Path, keep_single=False):
         matches, midx = [], {}
         rows = []
         for d in demos:
-            mk = (d.get("match", ""), d.get("event", ""), d.get("date", ""), d.get("url", ""))
+            mk = (d.get("match", ""), d.get("event", ""), d.get("date", ""), web_url(d.get("url")))
             if mk not in midx:
                 midx[mk] = len(matches)
                 matches.append(list(mk))
@@ -271,7 +279,7 @@ def build(out_dir: Path, keep_single=False):
                 s["maps"][mp] += 1
                 for k in ("k", "d", "a", "hs", "dmg", "ud", "fk", "fd", "fa", "awp", "rounds"):
                     s[k] += int(p.get(k) or 0)
-                s["games"].append([d.get("date", ""), mp.replace("de_", ""), d.get("match", ""), d.get("event", ""), d.get("url", ""),
+                s["games"].append([d.get("date", ""), mp.replace("de_", ""), d.get("match", ""), d.get("event", ""), web_url(d.get("url")),
                                    p.get("team", ""), p["k"], p["d"], p["a"], round(p["dmg"] / max(p["rounds"], 1), 1), p["rounds"]])
         grid.save()
         maj = grid.majority()

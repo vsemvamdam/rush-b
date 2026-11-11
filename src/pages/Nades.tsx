@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { usePanZoom } from '../lib/panzoom';
 import { Spinner } from '../components/ui';
 import { copy, useAsync } from '../lib/hooks';
-import { href, setQuery, useRoute } from '../lib/router';
+import { extUrl, href, setQuery, useRoute } from '../lib/router';
 import { loadGrid, placeName, useCalloutLang, useNames, type CalloutGrid, type NamesFile } from '../lib/callouts';
 import type { Throw } from '../lib/map3d'; // type only: three.js stays in the lazily loaded Replay3D chunk
 import '../styles/nades.css';
@@ -505,7 +505,7 @@ function LineupModal({ m, l, d, names, lang, highlight, fav, onFav, onClose }: {
                         <span><b>{name}</b> <span className="muted">{team}</span></span>
                         <span className="tiny muted">{match}{event ? ` · ${event}` : ''}{date ? ` · ${new Date(date).toLocaleDateString('ru-RU')}` : ''} · раунд {x.round}{x.time != null ? ` · ${fmtTime(x.time)}` : ''}</span>
                       </button>
-                      {url && <a className="nd-ext" href={url} target="_blank" rel="noreferrer" title="Матч на HLTV">↗</a>}
+                      {extUrl(url) && <a className="nd-ext" href={extUrl(url)} target="_blank" rel="noreferrer" title="Матч на HLTV">↗</a>}
                     </div>
                   );
                 })}

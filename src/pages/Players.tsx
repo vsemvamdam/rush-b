@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Spinner } from '../components/ui';
 import { copy, useAsync } from '../lib/hooks';
-import { href, setQuery, useRoute } from '../lib/router';
+import { extUrl, href, setQuery, useRoute } from '../lib/router';
 import { decodeCode } from '../lib/crosshair';
 import { paintCrosshair } from '../lib/crosshair-draw';
 import { loadLpLogos, loadTeamIndex, teamKeys, useTeamLogos, useTeamSlug, type TeamIndex } from '../lib/teams';
@@ -300,7 +300,7 @@ function PlayerPage({ sid }: { sid: string }) {
                       <td className="small">{g[2]}<div className="tiny faint">{g[3]}</div></td>
                       <td className="r num" style={{ color: g[6] > g[7] ? 'var(--good)' : g[6] < g[7] ? 'var(--bad)' : undefined }}>{g[6]}–{g[7]}–{g[8]}</td>
                       <td className="r num">{f1(g[9])}</td>
-                      <td>{g[4] ? <a className="link small" href={g[4]} target="_blank" rel="noreferrer" title="Матч на HLTV">↗</a> : null}</td>
+                      <td>{extUrl(g[4]) ? <a className="link small" href={extUrl(g[4])} target="_blank" rel="noreferrer" title="Матч на HLTV">↗</a> : null}</td>
                     </tr>
                   ))}
                 </tbody>

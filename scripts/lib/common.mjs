@@ -23,6 +23,21 @@ export async function writeJSON(file, data) {
   await fs.rename(tmp, file);
 }
 
+/**
+ * Kind of a downloaded picture by its first bytes: 'png' | 'jpg' | 'gif' | 'webp', or '' when it is something else.
+ * Pictures taken from other sites (Liquipedia) are published on our own address, so only real bitmaps may pass:
+ * an SVG or an HTML page saved under an image name would run its scripts as the site when opened by a direct link.
+ */
+export function imageKind(buf) {
+  const b = Buffer.from(buf.subarray(0, 12));
+  if (b.length >= 8 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'png';
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'jpg';
+  const head = b.toString('latin1');
+  if (head.startsWith('GIF87a') || head.startsWith('GIF89a')) return 'gif';
+  if (head.startsWith('RIFF') && head.slice(8, 12) === 'WEBP') return 'webp';
+  return '';
+}
+
 export const toCents = (v) => (v == null || Number.isNaN(+v) ? null : Math.round(+v * 100));
 
 /**
