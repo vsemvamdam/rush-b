@@ -103,7 +103,7 @@ async function main() {
     const url = `https://steamcommunity.com/market/pricehistory/?appid=730&currency=1&market_hash_name=${encodeURIComponent(q.name)}`;
     let r;
     try {
-      r = await fetch(url, { headers: { Cookie: cookie, 'User-Agent': 'Mozilla/5.0 cs2-craft history bot', Accept: 'application/json' }, signal: AbortSignal.timeout(45000) });
+      r = await fetch(url, { headers: { Cookie: cookie, 'User-Agent': 'Mozilla/5.0 rush-b history bot', Accept: 'application/json' }, signal: AbortSignal.timeout(45000) });
     } catch (e) { errors++; await sleep(15000); continue; }
     statuses[r.status] = (statuses[r.status] || 0) + 1;
     if (r.status === 429) {

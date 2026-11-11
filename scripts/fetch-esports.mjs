@@ -44,7 +44,7 @@ const dump = DUMP
 
 // GET JSON with the same polite UA for Polymarket
 async function pmGet(name, url) {
-  const r = await fetch(url, { headers: { 'User-Agent': 'CS2CRAFT-esports/1.0 (https://github.com/vsemvamdam/cs2-craft)', 'Accept-Encoding': 'gzip', Accept: 'application/json' } });
+  const r = await fetch(url, { headers: { 'User-Agent': 'RUSHB-esports/1.0 (https://github.com/vsemvamdam/rush-b)', 'Accept-Encoding': 'gzip', Accept: 'application/json' } });
   const text = await r.text();
   if (dump) await dump(name, text);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);

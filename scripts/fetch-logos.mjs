@@ -40,7 +40,7 @@ const OUT = arg('out', 'public/data');
 const MAX_DL = +(process.env.LOGOS_MAX_DOWNLOADS || 300);
 // --offline: no requests to Liquipedia — only rebuild the site files from the store (local tests)
 const OFFLINE = argv.includes('--offline');
-const REPO = process.env.GITHUB_REPOSITORY || 'vsemvamdam/cs2-craft';
+const REPO = process.env.GITHUB_REPOSITORY || 'vsemvamdam/rush-b';
 const WEEK = 7 * 86400000;
 
 const read = (f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return null; } };

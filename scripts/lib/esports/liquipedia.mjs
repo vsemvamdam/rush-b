@@ -5,7 +5,7 @@ import { parseHTML } from '../mini-html.mjs';
 
 export const WIKI = 'https://liquipedia.net/counterstrike/';
 export const API = WIKI + 'api.php';
-export const UA = 'CS2CRAFT-esports/1.0 (https://github.com/vsemvamdam/cs2-craft)';
+export const UA = 'RUSHB-esports/1.0 (https://github.com/vsemvamdam/rush-b)';
 
 export const TIER = { 1: 'S', 2: 'A', 3: 'B', 4: 'C', 5: 'D' };
 

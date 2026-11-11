@@ -20,7 +20,7 @@ export function guard(page: Page) {
 /** site images (served by us) that failed to load — external ones are skipped */
 export async function brokenLocalImages(page: Page, selector = 'img') {
   return page.$$eval(selector, (imgs) => imgs
-    .filter((i) => (i as HTMLImageElement).src.includes('/cs2-craft/') && (i as HTMLImageElement).complete && (i as HTMLImageElement).naturalWidth === 0)
+    .filter((i) => (i as HTMLImageElement).src.includes('/rush-b/') && (i as HTMLImageElement).complete && (i as HTMLImageElement).naturalWidth === 0)
     .map((i) => (i as HTMLImageElement).src));
 }
 

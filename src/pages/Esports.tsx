@@ -8,8 +8,8 @@ import './Esports.css';
    orphan branch esports-data — the static site reads it at runtime, Pages is not rebuilt. */
 const SOURCES = [
   import.meta.env.VITE_ESPORTS_URL as string | undefined,
-  'https://raw.githubusercontent.com/vsemvamdam/cs2-craft/esports-data/esports.json',
-  'https://cdn.jsdelivr.net/gh/vsemvamdam/cs2-craft@esports-data/esports.json',
+  'https://raw.githubusercontent.com/vsemvamdam/rush-b/esports-data/esports.json',
+  'https://cdn.jsdelivr.net/gh/vsemvamdam/rush-b@esports-data/esports.json',
 ].filter(Boolean) as string[];
 
 type Team = { n: string; f?: string; tbd?: boolean };

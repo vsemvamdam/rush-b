@@ -29,7 +29,7 @@ export type Match = {
 export type MatchesFile = { v: number; steamid: string; name?: string; updated: string | null; matches: Match[] };
 export type Filters = { mode: string; map: string; last: number };
 
-export const dataUrl = (steamid: string) => `https://raw.githubusercontent.com/vsemvamdam/cs2-craft/stats-data/matches/${steamid}.json`;
+export const dataUrl = (steamid: string) => `https://raw.githubusercontent.com/vsemvamdam/rush-b/stats-data/matches/${steamid}.json`;
 
 export const MODES: { k: string; ru: string; short?: string }[] = [
   { k: 'all', ru: 'Все' }, { k: 'premier', ru: 'Premier' }, { k: 'competitive', ru: 'Соревновательный', short: 'Соревн.' }, { k: 'wingman', ru: 'Напарники' },

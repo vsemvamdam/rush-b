@@ -9,7 +9,7 @@ export default defineConfig({
   fullyParallel: true,
   reporter: [['list']],
   use: {
-    baseURL: 'http://localhost:4173/cs2-craft/',
+    baseURL: 'http://localhost:4173/rush-b/',
     colorScheme: 'dark',
     locale: 'ru-RU',
     trace: 'retain-on-failure',
@@ -21,7 +21,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npx vite preview --port 4173 --strictPort',
-    url: 'http://localhost:4173/cs2-craft/',
+    url: 'http://localhost:4173/rush-b/',
     reuseExistingServer: true,
     timeout: 60_000,
   },

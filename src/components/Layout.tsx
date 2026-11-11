@@ -178,7 +178,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <footer className="footer">
         <div className="container row between">
           <span>RUSH B — фанатский проект, не связан с Valve. Изображения предметов — Steam CDN; база предметов — ByMykel/CSGO-API.</span>
-          <span><a className="link" href="https://github.com/vsemvamdam/cs2-craft" target="_blank" rel="noreferrer">GitHub</a> · <a className="link" href="#/about">О данных</a></span>
+          <span><a className="link" href="https://github.com/vsemvamdam/rush-b" target="_blank" rel="noreferrer">GitHub</a> · <a className="link" href="#/about">О данных</a></span>
         </div>
       </footer>
     </div>

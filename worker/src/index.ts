@@ -1,5 +1,5 @@
 /**
- * cs2-craft-api — live Steam profile lookups for the «Статистика» section of vsemvamdam.github.io/cs2-craft.
+ * cs2-craft-api — live Steam profile lookups for the «Статистика» section of vsemvamdam.github.io/rush-b.
  *
  *   GET /api/health                       → { ok, key }
  *   GET /api/profile?id=<steamid|url|vanity>[&fresh=1]
@@ -212,7 +212,7 @@ async function inventory(env: Env, raw: string, ctx: ExecutionContext): Promise<
   let total = 0;
   for (let page = 0; page < 3; page++) {
     const u = `https://steamcommunity.com/inventory/${steamid}/730/2?l=english&count=2000${start ? `&start_assetid=${start}` : ''}`;
-    const r = await fetch(u, { headers: { Accept: 'application/json', 'User-Agent': 'cs2-craft (+https://github.com/vsemvamdam/cs2-craft)' } });
+    const r = await fetch(u, { headers: { Accept: 'application/json', 'User-Agent': 'rush-b (+https://github.com/vsemvamdam/rush-b)' } });
     if (r.status === 403 || r.status === 401) return json({ steamid, private: true, items: [] }, 200, 600);
     if (r.status === 429) throw new HttpError(503, 'Steam временно ограничил загрузку инвентарей, попробуйте позже');
     if (!r.ok) throw new HttpError(502, `Инвентарь: Steam ответил ${r.status}`);
@@ -315,7 +315,7 @@ let srvPending: Promise<ServersPayload> | null = null; // one upstream request a
 
 async function loadServers(): Promise<ServersPayload> {
   const r = await fetch(CYBERSHOKE_API, {
-    headers: { Accept: 'application/json', 'User-Agent': 'cs2-craft server list (+https://github.com/vsemvamdam/cs2-craft)', Referer: 'https://cybershoke.net/' },
+    headers: { Accept: 'application/json', 'User-Agent': 'rush-b server list (+https://github.com/vsemvamdam/rush-b)', Referer: 'https://cybershoke.net/' },
     cf: { cacheTtl: 0 },
   });
   if (!r.ok) throw new HttpError(502, `Cybershoke ответил ${r.status}`);

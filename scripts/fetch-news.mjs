@@ -6,7 +6,7 @@
 // <prev>/all.json and <prev>/catalog.json are the previous run's output (branch news-data): news are kept
 //   for KEEP_DAYS, so a team page shows weeks of headlines although each feed holds only the last day or two.
 // --site  the published site; its data/teams/index.json, data/teams/info.json, data/rankings.json and
-//         data/teams/people.json give the teams, their names, rosters and recent former players (default https://vsemvamdam.github.io/cs2-craft/). --data reads the same
+//         data/teams/people.json give the teams, their names, rosters and recent former players (default https://vsemvamdam.github.io/rush-b/). --data reads the same
 //         files from a local folder instead (public/data after a local build).
 // --feeds local copies of the feeds as <source key>.xml (tests, offline runs).
 //
@@ -27,7 +27,7 @@ const argv = process.argv.slice(2);
 const arg = (n, d) => { const i = argv.indexOf('--' + n); return i >= 0 ? argv[i + 1] : d; };
 const PREV = arg('prev', 'news-prev');
 const OUT = arg('out', 'news-out');
-const SITE = arg('site', 'https://vsemvamdam.github.io/cs2-craft/').replace(/\/?$/, '/');
+const SITE = arg('site', 'https://vsemvamdam.github.io/rush-b/').replace(/\/?$/, '/');
 const DATA = arg('data', '');
 const FEEDS = arg('feeds', '');
 

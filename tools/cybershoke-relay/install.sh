@@ -6,7 +6,7 @@
 # каждые 30 секунд берёт полный список и отправляет его серверу сайта. Входящие порты не нужны, Docker не нужен.
 #
 # Установка (Ubuntu/Debian):
-#   curl -fsSL https://raw.githubusercontent.com/vsemvamdam/cs2-craft/main/tools/cybershoke-relay/install.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/vsemvamdam/rush-b/main/tools/cybershoke-relay/install.sh | sudo bash
 # Состояние:  systemctl status cs2-relay      Журнал:  journalctl -u cs2-relay -f
 # Удаление:   sudo systemctl disable --now cs2-relay && sudo rm /etc/systemd/system/cs2-relay.service /usr/local/bin/cs2-relay
 set -euo pipefail
@@ -33,7 +33,7 @@ cat > /usr/local/bin/cs2-relay <<'RELAY'
 # каждые 30 с: полный список Cybershoke → сервер сайта RUSH B (POST, gzip)
 SRC=https://cybershoke.net/api/api/v2/main/data
 DST=${CS2_RELAY_DST:-https://cs2-craft-api.arnitonov.workers.dev/api/servers/push}
-UA='cs2-craft server list (+https://github.com/vsemvamdam/cs2-craft)'
+UA='rush-b server list (+https://github.com/vsemvamdam/rush-b)'
 F="${RUNTIME_DIRECTORY:-/tmp}/cybershoke.json"
 ok=0; fails=0
 while true; do

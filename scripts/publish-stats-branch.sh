@@ -14,7 +14,7 @@ if git fetch -q --depth=1 origin "$branch" 2>/dev/null; then
   if [ "$same" = 1 ]; then echo "ветка $branch уже актуальна"; exit 0; fi
 fi
 auth="$(git config --get http.https://github.com/.extraheader || true)"
-repo="${GITHUB_REPOSITORY:-vsemvamdam/cs2-craft}"
+repo="${GITHUB_REPOSITORY:-vsemvamdam/rush-b}"
 tmp="$(mktemp -d)"
 mkdir -p "$tmp/matches"
 cp "$src"/*.json "$tmp/matches/"

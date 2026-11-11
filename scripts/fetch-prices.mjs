@@ -18,7 +18,7 @@ import path from 'node:path';
 import { DATA, STORE, readJSON, writeJSON, fetchRetry, sleep, toCents, today, timeBudget, buildNameIndex } from './lib/common.mjs';
 
 const P = path.join(STORE, 'prices');
-const UA = 'cs2-craft price bot (+https://github.com/vsemvamdam/cs2-craft)';
+const UA = 'rush-b price bot (+https://github.com/vsemvamdam/rush-b)';
 
 async function skinport() {
   const out = { items: {}, phases: {} };
@@ -89,7 +89,7 @@ async function steamSearch(current, meta, budgetMin) {
     const url = `https://steamcommunity.com/market/search/render/?query=&start=${start}&count=100&search_descriptions=0&sort_column=name&sort_dir=asc&appid=730&norender=1`;
     let r;
     try {
-      r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) cs2-craft', Accept: 'application/json, text/javascript, */*; q=0.01', 'Accept-Language': 'en-US,en;q=0.9', Referer: 'https://steamcommunity.com/market/search?appid=730' }, signal: AbortSignal.timeout(45000) });
+      r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) rush-b', Accept: 'application/json, text/javascript, */*; q=0.01', 'Accept-Language': 'en-US,en;q=0.9', Referer: 'https://steamcommunity.com/market/search?appid=730' }, signal: AbortSignal.timeout(45000) });
     } catch (e) {
       console.warn(`steam ${start}: ${e.message}`); await fail('network', 20000, e.message); continue;
     }

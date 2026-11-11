@@ -546,7 +546,7 @@ def merge_into(out_dir: Path, map_name: str, throws: list, replace_demo=True, ex
 # --------------------------------------------------------------------------- #
 # downloading / unpacking (for --from-urls / CI)
 # --------------------------------------------------------------------------- #
-UA = "Mozilla/5.0 (X11; Linux x86_64) cs2-craft-nades/1.0"
+UA = "Mozilla/5.0 (X11; Linux x86_64) rush-b-nades/1.0"
 
 
 def download(url: str, dest_dir: Path) -> Path:

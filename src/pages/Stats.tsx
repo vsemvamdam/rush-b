@@ -13,7 +13,7 @@ import '../styles/stats.css';
 
 const MyMatches = lazy(() => import('../components/MyMatches'));
 /** per-match stats exist only for accounts synced by .github/workflows/my-matches.yml */
-const matchesUrl = (sid: string) => `https://raw.githubusercontent.com/vsemvamdam/cs2-craft/stats-data/matches/${sid}.json`;
+const matchesUrl = (sid: string) => `https://raw.githubusercontent.com/vsemvamdam/rush-b/stats-data/matches/${sid}.json`;
 
 export default function Stats({ id }: { id?: string }) {
   const base = useAsync(() => apiBase(), []);

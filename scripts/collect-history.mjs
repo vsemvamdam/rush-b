@@ -22,7 +22,7 @@ const LIMIT = +opt('limit', 600);
 let DELAY = +opt('delay', 5000);
 const TIMEOUT = +opt('timeout', 40000);
 const OUT = opt('out', 'cs2-history.json.gz');
-const SITE = 'https://vsemvamdam.github.io/cs2-craft/data/history-targets.json';
+const SITE = 'https://vsemvamdam.github.io/rush-b/data/history-targets.json';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const short = (s, n = 46) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
 const mmss = (ms) => { const m = Math.round(ms / 60000); return m >= 60 ? `${Math.floor(m / 60)} ч ${m % 60} мин` : `${m} мин`; };
@@ -39,7 +39,7 @@ function save(db) {
 const pending = (it) => !it || !(it.p?.length || it.err === 404);
 
 const HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) cs2-craft history',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) rush-b history',
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   'Accept-Language': 'en-US,en;q=0.9',
 };

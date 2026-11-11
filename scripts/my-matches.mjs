@@ -8,7 +8,7 @@
 //      если Valve уже удалила демку — остаётся статистика координатора, demo: false;
 //   4. store/my-matches/matches/<steamid>.json (+ state.json, gc/*.json) — workflow кладёт это в релиз
 //      data-store (scripts/store.sh push my-matches) и в ветку stats-data, откуда файл читает сайт:
-//      https://raw.githubusercontent.com/vsemvamdam/cs2-craft/stats-data/matches/<steamid>.json
+//      https://raw.githubusercontent.com/vsemvamdam/rush-b/stats-data/matches/<steamid>.json
 //
 // Окружение: STEAM_API_KEY, CS2_AUTH_CODE, CS2_LAST_SHARECODE, STEAM_BOT_TOKEN (секреты), CS2_STEAMID,
 // необязательно MATCHES_PER_RUN (20), MATCHES_BUDGET_MIN (18), PYTHON (python3), STORE_DIR.
@@ -229,7 +229,7 @@ async function processDemo(url, steamid) {
     let res = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        res = await fetch(url, { signal: AbortSignal.timeout(10 * 60000), headers: { 'user-agent': 'cs2-craft-matches/1.0' } });
+        res = await fetch(url, { signal: AbortSignal.timeout(10 * 60000), headers: { 'user-agent': 'rush-b-matches/1.0' } });
         if (res.status < 500) break;
       } catch (e) {
         res = null;

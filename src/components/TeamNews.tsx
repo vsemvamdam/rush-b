@@ -6,8 +6,8 @@ import { href } from '../lib/router';
    Dust2.us and publishes t/<slug>.json in the orphan branch news-data — the site reads it at runtime. */
 const BASES = [
   import.meta.env.VITE_NEWS_BASE as string | undefined,
-  'https://raw.githubusercontent.com/vsemvamdam/cs2-craft/news-data/',
-  'https://cdn.jsdelivr.net/gh/vsemvamdam/cs2-craft@news-data/',
+  'https://raw.githubusercontent.com/vsemvamdam/rush-b/news-data/',
+  'https://cdn.jsdelivr.net/gh/vsemvamdam/rush-b@news-data/',
 ].filter(Boolean) as string[];
 
 type Item = { t: string; u: string; s: string; ts: number; p?: string[]; w?: 1 };

@@ -67,7 +67,7 @@ export async function fetchOddsPapi({ key, bookmakers, now = Date.now(), fetchIm
     const url = `${BASE}${path}?` + new URLSearchParams({ ...params, apiKey: key });
     let r;
     try {
-      r = await fetchImpl(url, { headers: { 'User-Agent': 'CS2CRAFT-esports/1.0 (https://github.com/vsemvamdam/cs2-craft)', 'Accept-Encoding': 'gzip', Accept: 'application/json' } });
+      r = await fetchImpl(url, { headers: { 'User-Agent': 'RUSHB-esports/1.0 (https://github.com/vsemvamdam/rush-b)', 'Accept-Encoding': 'gzip', Accept: 'application/json' } });
     } catch (e) {
       throw new Error(redact(`OddsPapi ${path}: ${e.message}`, key));
     }

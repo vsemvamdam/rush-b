@@ -83,7 +83,7 @@ export function decodeBody(buf, contentType = '') {
   }
 }
 
-export const UA = 'CS2CRAFT-news/1.0 (+https://github.com/vsemvamdam/cs2-craft)';
+export const UA = 'RUSHB-news/1.0 (+https://github.com/vsemvamdam/rush-b)';
 
 /** GET a feed → parsed items. Throws with .status on HTTP errors. */
 export async function fetchFeed(url, { timeoutMs = 20000 } = {}) {

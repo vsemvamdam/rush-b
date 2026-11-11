@@ -95,5 +95,5 @@ test('labels', () => {
   assert.equal(M.ratingColor(4999), '#b9c4d2');
   assert.equal(M.ratingColor(15000), '#a26bff');
   assert.equal(M.ratingColor(31000), '#f0b43c');
-  assert.equal(M.dataUrl('76561198077054958'), 'https://raw.githubusercontent.com/vsemvamdam/cs2-craft/stats-data/matches/76561198077054958.json');
+  assert.equal(M.dataUrl('76561198077054958'), 'https://raw.githubusercontent.com/vsemvamdam/rush-b/stats-data/matches/76561198077054958.json');
 });

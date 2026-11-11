@@ -2,7 +2,7 @@
 
 Русскоязычный сайт обо всём в CS2 (раньше назывался CS2 CRAFT): каталог всех скинов с историей цен, калькулятор крафтов (оружие и ножи), стикер-крафты, паттерны, раскидки профи с 3D-повтором, коллауты, профили игроков и команд, расписание про-матчей с коэффициентами, статистика Steam, генератор прицела, утилиты и живой список серверов для дуэлей.
 
-**Сайт:** https://vsemvamdam.github.io/cs2-craft/
+**Сайт:** https://vsemvamdam.github.io/rush-b/
 
 ## Что внутри
 
@@ -57,7 +57,7 @@ Steam отвечает «429 — слишком много запросов» н
 1. На своём компьютере в PowerShell (нужен Node.js — `winget install OpenJS.NodeJS.LTS`):
    ```powershell
    mkdir $HOME\cs2-history -Force; cd $HOME\cs2-history
-   curl.exe -L -o collect-history.mjs https://raw.githubusercontent.com/vsemvamdam/cs2-craft/main/scripts/collect-history.mjs
+   curl.exe -L -o collect-history.mjs https://raw.githubusercontent.com/vsemvamdam/rush-b/main/scripts/collect-history.mjs
    node collect-history.mjs              # 600 самых продаваемых скинов, ~45 минут; --limit 1500 — больше
    ```
    Можно прервать (Ctrl+C) и запустить снова — продолжит с места остановки.
@@ -81,7 +81,7 @@ GitHub Pages не умеет делать запросы к Steam со свои�
 **Ретранслятор (полный список).** Cybershoke выбирает, какие серверы показать, по стране запроса: Cloudflare получает только часть (нет Москвы, Казахстана, Ташкента…). Поэтому на отдельном VPS в Финляндии работает служба `cs2-relay` (`tools/cybershoke-relay/install.sh`): каждые 30 секунд она берёт полный список и отправляет его на `POST /api/servers/push`. Сервер сайта принимает его только с адресов из `RELAY_IPS` (`worker/wrangler.toml`), хранит в D1 (таблица `kv`) и отдаёт сайту, пока список свежее 2 минут; если ретранслятор молчит — берёт список сам (неполный, на сайте будет пометка). Установка на новый VPS — одна команда:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/vsemvamdam/cs2-craft/main/tools/cybershoke-relay/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/vsemvamdam/rush-b/main/tools/cybershoke-relay/install.sh | sudo bash
 ```
 
 Входящие порты не нужны; при смене IP сервера поправьте `RELAY_IPS`.
@@ -91,7 +91,7 @@ curl -fsSL https://raw.githubusercontent.com/vsemvamdam/cs2-craft/main/tools/cyb
 ```bash
 npm install
 npm run db            # скачать и собрать базу предметов в public/data
-npm run dev           # http://localhost:5173/cs2-craft/
+npm run dev           # http://localhost:5173/rush-b/
 npm test              # проверка математики контрактов и inspect-ссылок
 ```
 

@@ -25,7 +25,7 @@ type EsMatch = { id: string; t1: EsTeam; t2: EsTeam; start: number; status: stri
 
 const DATA = import.meta.env.BASE_URL + 'data/';
 const getJSON = <T,>(u: string): Promise<T | null> => fetch(u).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-const ESPORTS = 'https://raw.githubusercontent.com/vsemvamdam/cs2-craft/esports-data/esports.json';
+const ESPORTS = 'https://raw.githubusercontent.com/vsemvamdam/rush-b/esports-data/esports.json';
 const regionRu = (r?: string) => (r ? REGION_RU[r] || REGION_RU[r.toLowerCase()] || r : '');
 const REGION_RU: Record<string, string> = {
   eu: 'Европа', europe: 'Европа', na: 'Северная Америка', sa: 'Южная Америка', am: 'Америка', americas: 'Америка', asia: 'Азия', as: 'Азия',

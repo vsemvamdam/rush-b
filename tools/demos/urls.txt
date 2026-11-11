@@ -3,7 +3,7 @@
 # HLTV блокирует автоматическую загрузку — надёжнее скачать архив вручную,
 # загрузить его в Release этого репозитория и вписать сюда прямую ссылку на файл.
 #
-# https://github.com/vsemvamdam/cs2-craft/releases/download/demos/vitality-vs-spirit-m1.rar | {"event":"IEM Cologne 2026","match":"Vitality vs Spirit","date":"2026-08-10","url":"https://www.hltv.org/matches/...","vod":"https://www.youtube.com/watch?v=..."}
+# https://github.com/vsemvamdam/rush-b/releases/download/demos/vitality-vs-spirit-m1.rar | {"event":"IEM Cologne 2026","match":"Vitality vs Spirit","date":"2026-08-10","url":"https://www.hltv.org/matches/...","vod":"https://www.youtube.com/watch?v=..."}
 
 # Про-демки HLTV, опубликованные в открытом репозитории тестовых демок awpy (pnxenopoulos/awpy-fixtures)
 https://github.com/pnxenopoulos/awpy-fixtures/releases/download/hltv-de_mirage-2394170/hltv-de_mirage-2394170.dem | {"event":"ESL · 2026","match":"B8 vs Vitality","url":"https://www.hltv.org/matches/2394170"}
