@@ -31,13 +31,14 @@ export default function Home() {
   return (
     <div className="stack" style={{ gap: 28 }}>
       <section className="hero">
-        <span className="badge" style={{ alignSelf: 'flex-start' }}>Ноябрь 2026 · правила с крафтом ножей и сувениров</span>
-        <h1>Крафты, скины и цены CS2 — в одном месте</h1>
-        <p className="lead">Считаем контракты обмена с учётом всех новых правил, показываем историю цены каждого скина с первой сделки в Steam, собираем стикер-крафты и раскидки профи.</p>
+        <span className="badge" style={{ alignSelf: 'flex-start', justifySelf: 'start' }}>Ноябрь 2026 · правила с крафтом ножей и сувениров</span>
+        <h1>Всё про CS2 — в одном месте</h1>
+        <p className="lead">Скины с историей цен и калькулятор крафтов, раскидки профи в 3D, коллауты, команды и матчи, статистика Steam, генератор прицела и живые серверы для дуэлей с друзьями.</p>
         <div className="row">
-          <a className="btn primary" href="#/tradeup">Открыть калькулятор</a>
+          <a className="btn primary" href="#/duels">Найти дуэль</a>
           <a className="btn" href="#/skins">Каталог скинов</a>
-          <a className="btn ghost" href="#/craft">Собрать стикер-крафт</a>
+          <a className="btn" href="#/tradeup">Калькулятор крафтов</a>
+          <a className="btn ghost" href="#/nades">Раскидки профи</a>
         </div>
         {db && <div className="row small muted" style={{ gap: 18 }}><span><b className="num">{db.skins.length.toLocaleString('ru-RU')}</b> скинов</span><span><b className="num">{db.collections.length}</b> коллекций</span><span><b className="num">{db.collections.filter((c) => c.gold.length).length}</b> коллекций с ножами/перчатками</span><Updated prices={prices} /></div>}
       </section>

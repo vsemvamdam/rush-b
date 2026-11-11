@@ -1,4 +1,4 @@
-# План тестирования CS2 CRAFT
+# План тестирования RUSH B
 
 Автотесты: `e2e/site.spec.ts` (Playwright, `npx playwright test`) на собранном сайте (`npm run build`, vite preview).
 Каждый тест падает на ошибках в консоли, ответах 5xx и сломанных картинках самого сайта

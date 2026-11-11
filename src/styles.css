@@ -78,7 +78,7 @@ main { flex: 1; padding: 24px 0 64px; }
 .header { position: sticky; top: 0; z-index: 50; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
 .header-inner { display: flex; align-items: center; gap: 14px; height: 62px; }
 .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: 0.02em; font-size: 17px; white-space: nowrap; }
-.logo-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 15px; font-weight: 900; }
+.logo-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 18px; font-weight: 900; }
 .nav { display: flex; gap: 2px; align-items: center; }
 .nav-more { position: relative; }
 .nav-more-btn { padding: 7px 8px; border-radius: 8px; color: var(--muted); font-weight: 550; white-space: nowrap; font-size: 14px; background: none; border: 0; cursor: pointer; font-family: inherit; }

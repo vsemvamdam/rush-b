@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CS2 CRAFT · «Дуэли» — ретранслятор списка серверов Cybershoke.
+# RUSH B · «Дуэли» — ретранслятор списка серверов Cybershoke.
 #
 # Cybershoke показывает серверы в зависимости от страны, откуда пришёл запрос: серверу сайта на Cloudflare
 # достаётся только часть (нет Москвы, Казахстана…). Этот скрипт ставит на VPS (Финляндия) службу, которая
@@ -30,7 +30,7 @@ fi
 echo "2/3 Ставлю службу cs2-relay…"
 cat > /usr/local/bin/cs2-relay <<'RELAY'
 #!/usr/bin/env bash
-# каждые 30 с: полный список Cybershoke → сервер сайта CS2 CRAFT (POST, gzip)
+# каждые 30 с: полный список Cybershoke → сервер сайта RUSH B (POST, gzip)
 SRC=https://cybershoke.net/api/api/v2/main/data
 DST=${CS2_RELAY_DST:-https://cs2-craft-api.arnitonov.workers.dev/api/servers/push}
 UA='cs2-craft server list (+https://github.com/vsemvamdam/cs2-craft)'
@@ -56,7 +56,7 @@ chmod 755 /usr/local/bin/cs2-relay
 
 cat > /etc/systemd/system/cs2-relay.service <<'UNIT'
 [Unit]
-Description=CS2 CRAFT: Cybershoke server list relay
+Description=RUSH B: Cybershoke server list relay
 After=network-online.target
 Wants=network-online.target
 

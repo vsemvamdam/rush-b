@@ -32,7 +32,7 @@ const TITLES: Record<string, string> = {
 function App() {
   const r = useRoute();
   const [a, b] = r.parts;
-  document.title = (TITLES[a] ? TITLES[a] + ' · ' : '') + 'CS2 CRAFT';
+  document.title = (TITLES[a] ? TITLES[a] + ' · ' : '') + 'RUSH B';
   let page;
   switch (a) {
     case undefined: page = <Home />; break;

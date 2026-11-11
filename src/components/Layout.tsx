@@ -104,7 +104,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="app">
       <header className="header">
         <div className="container header-inner">
-          <a href="#/" className="logo"><span className="logo-mark">C2</span><span>CS2 CRAFT</span></a>
+          <a href="#/" className="logo"><span className="logo-mark">B</span><span>RUSH B</span></a>
           <nav className={'nav' + (menu ? ' open' : '')}>
             {NAV.map((n) => <a key={n.to} href={href(n.to)} className={active(n.to) ? 'active' : ''}>{n.label}</a>)}
             <div className="nav-more">
@@ -135,7 +135,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </main>
       <footer className="footer">
         <div className="container row between">
-          <span>CS2 CRAFT — фанатский проект, не связан с Valve. Изображения предметов — Steam CDN; база предметов — ByMykel/CSGO-API.</span>
+          <span>RUSH B — фанатский проект, не связан с Valve. Изображения предметов — Steam CDN; база предметов — ByMykel/CSGO-API.</span>
           <span><a className="link" href="https://github.com/vsemvamdam/cs2-craft" target="_blank" rel="noreferrer">GitHub</a> · <a className="link" href="#/about">О данных</a></span>
         </div>
       </footer>

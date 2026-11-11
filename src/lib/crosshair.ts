@@ -84,7 +84,7 @@ export function commandLines(ch: XH, ex?: Extras): string[] {
 export const commandsOneLine = (ch: XH, ex?: Extras) => commandLines(ch, ex).join('; ');
 export function autoexec(ch: XH, ex: Extras): string {
   return [
-    '// Прицел CS2 — собран в генераторе прицела CS2 CRAFT',
+    '// Прицел CS2 — собран в генераторе прицела RUSH B',
     `// Код для импорта в игре: ${encode(ch)}`,
     '',
     ...commandLines(ch, ex),
