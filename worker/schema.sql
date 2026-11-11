@@ -22,3 +22,5 @@ CREATE TABLE IF NOT EXISTS history (
   level INTEGER, xp INTEGER, games INTEGER, playtime INTEGER, cs2 INTEGER,
   PRIMARY KEY (steamid, day)
 );
+-- small key → value store: «servers» = the latest Cybershoke list posted by the relay (tools/cybershoke-relay)
+CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL, at INTEGER NOT NULL);

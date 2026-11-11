@@ -10,6 +10,10 @@ binding = "DB"
 database_name = "cs2-craft-stats"
 database_id = "__D1_ID__"
 
+[vars]
+# servers allowed to POST the Cybershoke list (tools/cybershoke-relay, VPS in Finland)
+RELAY_IPS = "5.180.172.28"
+
 [triggers]
 crons = ["*/10 * * * *"]
 

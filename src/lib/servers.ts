@@ -4,7 +4,7 @@ export type Row = [string, number, string, number, string, string, number, numbe
 export type ModeInfo = { id: string; name: string; label: string | null; players: number; servers: number; cats: string[] };
 export type ServersPayload = {
   source: string; fetched: number; players: number; servers: number; modes: ModeInfo[];
-  locations: Record<string, [string, string, string]>; list: Row[]; stale?: boolean;
+  locations: Record<string, [string, string, string]>; list: Row[]; stale?: boolean; partial?: boolean; relay?: boolean;
 };
 export type Srv = {
   key: string; ip: string; port: number; mode: string; num: number; loc: string; map: string;

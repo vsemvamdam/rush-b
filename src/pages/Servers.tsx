@@ -179,6 +179,7 @@ export default function Servers() {
           Пока можно открыть список на <a className="link" href="https://cybershoke.net/ru/cs2/servers/duels" target="_blank" rel="noreferrer">cybershoke.net</a>.
         </div>
       )}
+      {data?.partial && !data.stale && <div className="notice">Сейчас список неполный: нет серверов в Москве, Казахстане и ещё нескольких городах. Полный список обычно возвращается через минуту.</div>}
       {data?.stale && <div className="notice warn">Cybershoke сейчас не отвечает — показан последний полученный список (от {new Date(data.fetched * 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}). Число игроков может быть неточным.</div>}
 
       {join && (

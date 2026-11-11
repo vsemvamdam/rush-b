@@ -12,6 +12,7 @@
  *                                            stats, last 20 results (official FACEIT Data API, cached 10 min)
  *   GET /api/servers                       → «Дуэли»: every Cybershoke CS2 server (mode, map, location, players,
  *                                            ip:port) packed into short rows (cached 20 s, see servers.ts)
+ *   POST /api/servers/push                 ← the relay on a VPS in Finland sends the full list (only from RELAY_IPS)
  *
  * Every profile that is looked up joins the ladder (D1 table `profiles`); the cron trigger refreshes the
  * stalest ones every 10 minutes, so levels and game counts stay current. The Steam Web API key is a Worker
@@ -23,6 +24,8 @@ export interface Env {
   DB: D1Database;
   STEAM_API_KEY: string;
   FACEIT_API_KEY?: string;
+  /** IPs allowed to POST /api/servers/push (the Cybershoke relay), comma-separated — wrangler.toml [vars] */
+  RELAY_IPS?: string;
 }
 
 const API = 'https://api.steampowered.com';
@@ -300,9 +303,13 @@ async function faceit(env: Env, raw: string, ctx: ExecutionContext): Promise<Res
 }
 
 // ---------------------------------------------------------------------------
-// «Дуэли»: Cybershoke server list (their API allows only their own origin, so the site gets it through here)
-const SERVERS_TTL = 20; // seconds; Cybershoke updates player counts continuously
-const SERVERS_STALE = 3600; // serve the last good list this long if Cybershoke is unreachable
+// «Дуэли»: Cybershoke server list (their API allows only their own origin, so the site gets it through here).
+// Cybershoke picks the servers it lists by the requester's country, and a Worker gets only part of them (no Moscow,
+// Kazakhstan…). So a tiny relay on a VPS in Finland (tools/cybershoke-relay) posts the full list here every 30 s;
+// the Worker's own request is the fallback while the relay is silent.
+const SERVERS_TTL = 20; // seconds a list is served from memory
+const RELAY_FRESH = 120; // a relayed list younger than this wins over our own (partial) request
+const SERVERS_STALE = 3600; // serve the last good list this long if nothing fresh can be had
 let srvMem: { at: number; data: ServersPayload } | null = null; // per-isolate copy (the Cache API is a no-op on *.workers.dev)
 let srvPending: Promise<ServersPayload> | null = null; // one upstream request at a time
 
@@ -315,27 +322,54 @@ async function loadServers(): Promise<ServersPayload> {
   if (!(r.headers.get('content-type') || '').includes('json')) throw new HttpError(502, 'Cybershoke не отдал список серверов');
   const data = slimCybershoke(await r.json(), Math.floor(Date.now() / 1000));
   if (!data.list.length) throw new HttpError(502, 'В ответе Cybershoke нет серверов CS2');
-  return data;
+  return { ...data, partial: true };
 }
 
-async function servers(ctx: ExecutionContext): Promise<Response> {
+async function relayed(env: Env): Promise<ServersPayload | null> {
+  try {
+    const row = await env.DB.prepare('SELECT v FROM kv WHERE k = ?').bind('servers').first<{ v: string }>();
+    return row ? (JSON.parse(row.v) as ServersPayload) : null;
+  } catch {
+    return null; // table not created yet
+  }
+}
+
+async function servers(env: Env): Promise<Response> {
   const now = Date.now();
   if (srvMem && now - srvMem.at < SERVERS_TTL * 1000) return json(srvMem.data, 200, SERVERS_TTL);
-  const cache = caches.default;
-  const key = new Request('https://cache.cs2-craft/servers');
-  const hit = await cache.match(key);
-  if (hit) return new Response(hit.body, { headers: { ...Object.fromEntries(hit.headers), ...CORS, 'X-Cache': 'HIT' } });
+  const relay = await relayed(env);
+  const age = (d: ServersPayload | null) => (d ? now / 1000 - d.fetched : Infinity);
+  if (relay && age(relay) < RELAY_FRESH) {
+    srvMem = { at: now, data: relay };
+    return json(relay, 200, SERVERS_TTL);
+  }
   try {
     srvPending ||= loadServers().finally(() => { srvPending = null; });
     const data = await srvPending;
     srvMem = { at: Date.now(), data };
-    const res = json(data, 200, SERVERS_TTL);
-    ctx.waitUntil(cache.put(key, res.clone()));
-    return res;
+    return json(data, 200, SERVERS_TTL);
   } catch (e) {
-    if (srvMem && now - srvMem.at < SERVERS_STALE * 1000) return json({ ...srvMem.data, stale: true }, 200, 10);
+    const last = [relay, srvMem?.data || null].filter((d): d is ServersPayload => !!d && age(d) < SERVERS_STALE).sort((a, b) => b.fetched - a.fetched)[0];
+    if (last) return json({ ...last, stale: true }, 200, 10);
     throw e instanceof HttpError ? e : new HttpError(502, 'Не удалось получить список серверов Cybershoke');
   }
+}
+
+/** POST /api/servers/push — the relay sends Cybershoke's raw main/data (gzip). Accepted only from RELAY_IPS. */
+async function pushServers(req: Request, env: Env): Promise<Response> {
+  const ip = req.headers.get('CF-Connecting-IP') || '';
+  const allowed = (env.RELAY_IPS || '').split(/[\s,]+/).filter(Boolean);
+  if (!ip || !allowed.includes(ip)) throw new HttpError(403, 'Этот адрес не может присылать список');
+  if (!req.body) throw new HttpError(400, 'Пустой запрос');
+  const body = /gzip/i.test(req.headers.get('Content-Type') || '') ? req.body.pipeThrough(new DecompressionStream('gzip')) : req.body;
+  let raw: unknown;
+  try { raw = await new Response(body).json(); } catch { throw new HttpError(400, 'Это не JSON'); }
+  const data: ServersPayload = { ...slimCybershoke(raw, Math.floor(Date.now() / 1000)), relay: true };
+  if (!data.list.length) throw new HttpError(400, 'В списке нет серверов CS2');
+  await env.DB.prepare('INSERT INTO kv (k, v, at) VALUES (?1, ?2, ?3) ON CONFLICT(k) DO UPDATE SET v = ?2, at = ?3')
+    .bind('servers', JSON.stringify(data), data.fetched).run();
+  srvMem = { at: Date.now(), data };
+  return json({ ok: true, servers: data.servers, players: data.players });
 }
 
 async function ladder(env: Env, url: URL): Promise<Response> {
@@ -379,10 +413,12 @@ async function refresh(env: Env) {
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
-    if (req.method !== 'GET') return json({ error: 'Только GET' }, 405);
     const url = new URL(req.url);
+    const isPush = req.method === 'POST' && url.pathname === '/api/servers/push';
+    if (req.method !== 'GET' && !isPush) return json({ error: 'Только GET' }, 405);
     try {
-      if (url.pathname === '/api/servers') return await servers(ctx); // needs no keys
+      if (isPush) return await pushServers(req, env);
+      if (url.pathname === '/api/servers') return await servers(env); // needs no keys
       if (!env.STEAM_API_KEY && url.pathname !== '/api/health') throw new HttpError(503, 'Ключ Steam API не настроен');
       switch (url.pathname) {
         case '/api/health': return json({ ok: true, key: !!env.STEAM_API_KEY, faceit: !!env.FACEIT_API_KEY });

@@ -27,6 +27,10 @@ export type ServersPayload = {
   locations: Record<string, [string, string, string]>;
   list: Row[];
   stale?: boolean;
+  /** our own request: Cybershoke showed only the servers it lists for Cloudflare's country */
+  partial?: boolean;
+  /** came from the relay in Finland — the full list a visitor from Russia/CIS sees */
+  relay?: boolean;
 };
 
 export const CYBERSHOKE_API = 'https://cybershoke.net/api/api/v2/main/data';
