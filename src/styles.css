@@ -78,7 +78,15 @@ main { flex: 1; padding: 24px 0 64px; }
 .header { position: sticky; top: 0; z-index: 50; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
 .header-inner { display: flex; align-items: center; gap: 14px; height: 62px; }
 .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: 0.02em; font-size: 17px; white-space: nowrap; }
-.logo-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 18px; font-weight: 900; }
+.logo-mark { flex: none; filter: drop-shadow(0 3px 8px color-mix(in srgb, var(--accent) 35%, transparent)); transition: transform .2s; }
+.logo:hover .logo-mark { transform: translateX(2px) rotate(-3deg); }
+.logo-mark .lm-tile { fill: var(--accent); }
+.logo-mark .lm-ink { stroke: var(--accent-ink); }
+.logo-mark .lm-b { fill: var(--accent-ink); font: 900 25px/1 var(--font); }
+.logo-text { display: flex; flex-direction: column; line-height: 1; gap: 3px; }
+.logo-name { font-size: 18px; font-weight: 900; letter-spacing: .03em; font-style: italic; }
+.logo-name b { color: var(--accent); font-weight: 900; }
+.logo-sub { font-size: 10.5px; font-weight: 700; letter-spacing: .32em; color: var(--muted); padding-left: 1px; }
 .nav { display: flex; gap: 2px; align-items: center; }
 .nav-more { position: relative; }
 .nav-more-btn { padding: 7px 8px; border-radius: 8px; color: var(--muted); font-weight: 550; white-space: nowrap; font-size: 14px; background: none; border: 0; cursor: pointer; font-family: inherit; }
@@ -264,7 +272,7 @@ hr.sep { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .table th, .table td { padding: 8px 8px; }
 }
-@media (max-width: 420px) { .logo span:last-child { display: none; } }
+@media (max-width: 420px) { .logo-text { display: none; } }
 
 /* crosshair generator */
 .xh-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; align-items: start; }

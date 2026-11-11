@@ -25,6 +25,35 @@ const MORE = [
   { to: '/about', label: 'О данных' },
 ];
 
+/** RUSH B mark: a bombsite «B» on an orange tile, rushed at by speed lines */
+function Logo() {
+  return (
+    <a href="#/" className="logo" aria-label="RUSH B — на главную">
+      <svg className="logo-mark" viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
+        <defs>
+          <linearGradient id="lg-shine" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#fff" stopOpacity=".28" />
+            <stop offset=".55" stopColor="#fff" stopOpacity="0" />
+            <stop offset="1" stopColor="#000" stopOpacity=".18" />
+          </linearGradient>
+        </defs>
+        <rect x="1" y="1" width="38" height="38" rx="10" className="lm-tile" />
+        <rect x="1" y="1" width="38" height="38" rx="10" fill="url(#lg-shine)" />
+        <g className="lm-ink" strokeLinecap="round" strokeWidth="2.6">
+          <line x1="6.5" y1="14" x2="12" y2="14" opacity=".55" />
+          <line x1="4.5" y1="20" x2="12" y2="20" opacity=".85" />
+          <line x1="6.5" y1="26" x2="12" y2="26" opacity=".55" />
+        </g>
+        <text x="25.5" y="29.5" textAnchor="middle" className="lm-b" transform="skewX(-10) translate(5 0)">B</text>
+      </svg>
+      <span className="logo-text">
+        <span className="logo-name">RUSH <b>B</b></span>
+        <span className="logo-sub">CS2</span>
+      </span>
+    </a>
+  );
+}
+
 /** searchable text of a skin: English market name + official Russian name */
 export const skinText = (s: { name: string; ru?: string }) => norm(s.name + ' ' + (s.ru || ''));
 
@@ -104,7 +133,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="app">
       <header className="header">
         <div className="container header-inner">
-          <a href="#/" className="logo"><span className="logo-mark">B</span><span>RUSH B</span></a>
+          <Logo />
           <nav className={'nav' + (menu ? ' open' : '')}>
             {NAV.map((n) => <a key={n.to} href={href(n.to)} className={active(n.to) ? 'active' : ''}>{n.label}</a>)}
             <div className="nav-more">
