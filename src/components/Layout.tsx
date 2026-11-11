@@ -25,26 +25,39 @@ const MORE = [
   { to: '/about', label: 'О данных' },
 ];
 
-/** RUSH B mark: a bombsite «B» on an orange tile, rushed at by speed lines */
+/** RUSH B mark: a bombsite «B» painted on the wall in a freehand circle — drips, and splatter flung from the rush */
 function Logo() {
   return (
     <a href="#/" className="logo" aria-label="RUSH B — на главную">
-      <svg className="logo-mark" viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
+      <svg className="logo-mark" viewBox="2 4 44 42" width="46" height="44" aria-hidden="true">
         <defs>
-          <linearGradient id="lg-shine" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#fff" stopOpacity=".28" />
-            <stop offset=".55" stopColor="#fff" stopOpacity="0" />
-            <stop offset="1" stopColor="#000" stopOpacity=".18" />
-          </linearGradient>
+          <filter id="rb-paint" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves={2} seed={11} result="n" />
+            <feDisplacementMap in="SourceGraphic" in2="n" scale={1.7} xChannelSelector="R" yChannelSelector="G" />
+          </filter>
         </defs>
-        <rect x="1" y="1" width="38" height="38" rx="10" className="lm-tile" />
-        <rect x="1" y="1" width="38" height="38" rx="10" fill="url(#lg-shine)" />
-        <g className="lm-ink" strokeLinecap="round" strokeWidth="2.6">
-          <line x1="6.5" y1="14" x2="12" y2="14" opacity=".55" />
-          <line x1="4.5" y1="20" x2="12" y2="20" opacity=".85" />
-          <line x1="6.5" y1="26" x2="12" y2="26" opacity=".55" />
+        <g className="lm-paint" filter="url(#rb-paint)">
+          <path fill="none" strokeWidth="2.9" strokeLinecap="round" d="M14.2 13.4 C19.6 8.6 29.4 8.1 35.6 12.8 C41.9 17.6 42.6 27.6 37.4 33.8 C32.4 39.8 22.6 41.1 16.4 37.2 C11.6 34.2 9.6 28.6 10.6 23.2 C11.2 19.9 12.6 17.4 15.4 15.2 C17.9 13.2 21 12 23.6 11.6" />
+          <g transform="rotate(-6 26 25)">
+            <path fillRule="evenodd" stroke="none" d="M18.4 14 C21.6 13.6 25.2 13.5 27.6 13.7 C32.2 14 34.4 16.4 34.2 19.6 C34.1 22 32.9 23.5 30.9 24.2 C33.7 24.9 35.6 26.9 35.5 29.7 C35.4 33.5 32.4 35.6 27.6 35.7 C24.6 35.8 21.6 35.7 18.9 35.5 C18.7 28.4 18.5 21.1 18.4 14 Z M23.2 17.9 L23.3 22.6 C24.6 22.7 25.8 22.7 26.8 22.6 C28.5 22.5 29.4 21.6 29.3 20.2 C29.2 18.8 28.1 18 26.4 17.9 C25.4 17.8 24.2 17.8 23.2 17.9 Z M23.4 26.4 L23.5 31.5 C24.9 31.6 26.2 31.6 27.3 31.5 C29.3 31.4 30.3 30.4 30.2 28.9 C30.1 27.3 29 26.4 27 26.3 C25.8 26.2 24.6 26.3 23.4 26.4 Z" />
+            <g fill="none" strokeLinecap="round">
+              <path strokeWidth="1.9" d="M20.6 35 C20.6 37.6 20.7 40.4 20.5 43.4" />
+              <path strokeWidth="1.5" d="M27.2 35.4 V39.6" />
+              <path strokeWidth="1.2" d="M33.2 33.6 V36.8" />
+            </g>
+          </g>
+          <g stroke="none">
+            <ellipse cx="6.4" cy="24.6" rx="2.6" ry="1.3" transform="rotate(-8 6.4 24.6)" />
+            <ellipse cx="3.2" cy="28.8" rx="1.8" ry=".9" transform="rotate(12 3.2 28.8)" opacity=".85" />
+            <ellipse cx="4.6" cy="19.6" rx="1.5" ry=".8" transform="rotate(-18 4.6 19.6)" opacity=".8" />
+            <circle cx="8.6" cy="31.6" r="1.1" />
+            <circle cx="1.8" cy="23" r=".7" opacity=".7" />
+            <circle cx="9.2" cy="17.2" r=".6" opacity=".7" />
+            <circle cx="5.6" cy="35.2" r=".8" opacity=".6" />
+            <circle cx="41.8" cy="9.2" r=".8" opacity=".7" />
+            <circle cx="44.2" cy="36.4" r=".6" opacity=".6" />
+          </g>
         </g>
-        <text x="25.5" y="29.5" textAnchor="middle" className="lm-b" transform="skewX(-10) translate(5 0)">B</text>
       </svg>
       <span className="logo-text">
         <span className="logo-name">RUSH <b>B</b></span>

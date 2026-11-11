@@ -77,15 +77,13 @@ main { flex: 1; padding: 24px 0 64px; }
 /* header */
 .header { position: sticky; top: 0; z-index: 50; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
 .header-inner { display: flex; align-items: center; gap: 14px; height: 62px; }
-.logo { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: 0.02em; font-size: 17px; white-space: nowrap; }
-.logo-mark { flex: none; filter: drop-shadow(0 3px 8px color-mix(in srgb, var(--accent) 35%, transparent)); transition: transform .2s; }
-.logo:hover .logo-mark { transform: translateX(2px) rotate(-3deg); }
-.logo-mark .lm-tile { fill: var(--accent); }
-.logo-mark .lm-ink { stroke: var(--accent-ink); }
-.logo-mark .lm-b { fill: var(--accent-ink); font: 900 25px/1 var(--font); }
+.logo { display: flex; align-items: center; gap: 8px; font-weight: 800; letter-spacing: 0.02em; font-size: 17px; white-space: nowrap; }
+.logo-mark { flex: none; --bsite: #e5483a; transition: transform .2s; }
+.logo:hover .logo-mark { transform: rotate(-4deg) scale(1.04); }
+.logo-mark .lm-paint { fill: var(--bsite); stroke: var(--bsite); }
 .logo-text { display: flex; flex-direction: column; line-height: 1; gap: 3px; }
 .logo-name { font-size: 18px; font-weight: 900; letter-spacing: .03em; font-style: italic; }
-.logo-name b { color: var(--accent); font-weight: 900; }
+.logo-name b { color: #e5483a; font-weight: 900; }
 .logo-sub { font-size: 10.5px; font-weight: 700; letter-spacing: .32em; color: var(--muted); padding-left: 1px; }
 .nav { display: flex; gap: 2px; align-items: center; }
 .nav-more { position: relative; }
