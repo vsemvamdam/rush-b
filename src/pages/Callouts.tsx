@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { usePanZoom } from '../lib/panzoom';
 import { Spinner } from '../components/ui';
 import { useAsync } from '../lib/hooks';
-import { href } from '../lib/router';
+import { extUrl, href } from '../lib/router';
 import { loadGrid, placeName, prettyPlace, useCalloutLang, useNames, type PlaceName } from '../lib/callouts';
 import '../styles/nades.css';
 
@@ -163,7 +163,7 @@ function MapCallouts({ m, maps }: { m: MapInfo; maps: MapInfo[] }) {
           <details>
             <summary className="link">Источники для {m.name} ({info.sources.length})</summary>
             <ul className="tiny" style={{ margin: '8px 0 0', paddingLeft: 18 }}>
-              {info.sources.map((s) => <li key={s}><a className="link" href={s} target="_blank" rel="noreferrer">{s.replace(/^https?:\/\//, '').slice(0, 90)}</a></li>)}
+              {info.sources.map((s) => <li key={s}><a className="link" href={extUrl(s)} target="_blank" rel="noreferrer">{s.replace(/^https?:\/\//, '').slice(0, 90)}</a></li>)}
             </ul>
           </details>
         ) : null}

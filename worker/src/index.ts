@@ -17,6 +17,10 @@
  * Every profile that is looked up joins the ladder (D1 table `profiles`); the cron trigger refreshes the
  * stalest ones every 10 minutes, so levels and game counts stay current. The Steam Web API key is a Worker
  * secret (STEAM_API_KEY) and never leaves the server.
+ *
+ * The API is public and needs no login, so every address is limited (wrangler.toml [[ratelimits]]): RL_API for
+ * any request, RL_STEAM for the ones that spend the Steam Web API key (a profile is 6 calls, the key allows
+ * 100 000 a day and is shared with the «Мои матчи» workflow). Over the limit → 429 with Retry-After.
  */
 import { CYBERSHOKE_API, slimCybershoke, type ServersPayload } from './servers';
 
@@ -26,6 +30,9 @@ export interface Env {
   FACEIT_API_KEY?: string;
   /** IPs allowed to POST /api/servers/push (the Cybershoke relay), comma-separated — wrangler.toml [vars] */
   RELAY_IPS?: string;
+  /** per-address request limits — wrangler.toml [[ratelimits]]; without the bindings (tests, old deploys) nothing is limited */
+  RL_API?: RateLimit;
+  RL_STEAM?: RateLimit;
 }
 
 const API = 'https://api.steampowered.com';
@@ -44,11 +51,44 @@ class HttpError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 
-function json(data: unknown, status = 200, maxAge = 0): Response {
+function json(data: unknown, status = 200, maxAge = 0, extra: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': maxAge ? `public, max-age=${maxAge}` : 'no-store', ...CORS },
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': maxAge ? `public, max-age=${maxAge}` : 'no-store',
+      'X-Content-Type-Options': 'nosniff', ...CORS, ...extra,
+    },
   });
+}
+
+// ---------------------------------------------------------------------------
+// request limits
+/** what a limit is counted for: an IPv4 address as it is, an IPv6 one cut to its /64 (a subscriber owns the whole prefix) */
+export function clientKey(ip: string): string {
+  const s = (ip || '').trim().toLowerCase();
+  if (!s.includes(':')) return s;
+  const [head, tail] = s.split('::');
+  const h = head ? head.split(':') : [];
+  const t = tail ? tail.split(':') : [];
+  const groups = tail === undefined ? h : [...h, ...Array<string>(Math.max(0, 8 - h.length - t.length)).fill('0'), ...t];
+  return groups.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, '')).join(':') + '::/64';
+}
+
+/** true when this address is over the limit; a missing or failing limiter never takes the API down */
+async function limited(rl: RateLimit | undefined, key: string): Promise<boolean> {
+  if (!rl || !key) return false;
+  try {
+    return !(await rl.limit({ key })).success;
+  } catch {
+    return false;
+  }
+}
+const tooMany = () => json({ error: 'Слишком много запросов — подождите минуту' }, 429, 0, { 'Retry-After': '60' });
+
+/** whole number from a query parameter, kept inside [lo, hi]; anything that is not a number → the default */
+export function intParam(v: string | null, def: number, lo: number, hi: number): number {
+  const n = Math.trunc(Number(v || def));
+  return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def;
 }
 
 async function steam<T>(env: Env, path: string, params: Record<string, string | number>): Promise<T | null> {
@@ -66,8 +106,11 @@ async function steam<T>(env: Env, path: string, params: Record<string, string | 
 // ids
 const BASE64 = 76561197960265728n;
 export function parseInput(raw: string): { steamid?: string; vanity?: string } {
-  const s = decodeURIComponent(raw || '').trim();
-  if (!s) return {};
+  let s = (raw || '').trim();
+  try {
+    s = decodeURIComponent(s).trim(); // a pasted link can come percent-encoded
+  } catch { /* a stray «%» — take the text as it is */ }
+  if (!s || s.length > 300) return {};
   let m = s.match(/(?:^|\D)(7656119\d{10})(?:\D|$)/); // bare id or any link containing it (Steam, tracker.gg, csst.at…)
   if (m) return { steamid: m[1] };
   m = s.match(/^\[?U:1:(\d+)\]?$/i);
@@ -373,16 +416,19 @@ async function pushServers(req: Request, env: Env): Promise<Response> {
 }
 
 async function ladder(env: Env, url: URL): Promise<Response> {
-  const by = LADDER[url.searchParams.get('by') || 'xp'] || LADDER.xp;
-  const limit = Math.min(100, Math.max(1, +(url.searchParams.get('limit') || 50)));
-  const offset = Math.max(0, +(url.searchParams.get('offset') || 0));
+  // only the column names of LADDER ever get into the SQL text; everything typed by the visitor is bound
+  const byKey = Object.hasOwn(LADDER, url.searchParams.get('by') || '') ? url.searchParams.get('by')! : 'xp';
+  const by = LADDER[byKey];
+  const limit = intParam(url.searchParams.get('limit'), 50, 1, 100);
+  const offset = intParam(url.searchParams.get('offset'), 0, 0, 10_000_000);
   const country = (url.searchParams.get('country') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
-  const where = `${by.col} IS NOT NULL${country ? ' AND country = ?1' : ''}`;
-  const stmt = env.DB.prepare(`SELECT steamid, name, avatar, country, level, xp, badges, games, playtime, cs2, cs2_2w, created, vac, updated FROM profiles WHERE ${where} ORDER BY ${by.col} ${by.dir} LIMIT ${limit} OFFSET ${offset}`);
+  const where = `${by.col} IS NOT NULL${country ? ' AND country = ?' : ''}`;
+  const filter = country ? [country] : [];
+  const stmt = env.DB.prepare(`SELECT steamid, name, avatar, country, level, xp, badges, games, playtime, cs2, cs2_2w, created, vac, updated FROM profiles WHERE ${where} ORDER BY ${by.col} ${by.dir} LIMIT ? OFFSET ?`);
   const cnt = env.DB.prepare(`SELECT COUNT(*) AS n FROM profiles WHERE ${where}`);
-  const [rows, n] = await Promise.all([(country ? stmt.bind(country) : stmt).all(), (country ? cnt.bind(country) : cnt).first<{ n: number }>()]);
+  const [rows, n] = await Promise.all([stmt.bind(...filter, limit, offset).all(), (country ? cnt.bind(country) : cnt).first<{ n: number }>()]);
   const countries = await env.DB.prepare('SELECT country, COUNT(*) AS n FROM profiles WHERE country IS NOT NULL GROUP BY country ORDER BY n DESC LIMIT 60').all();
-  return json({ by: url.searchParams.get('by') || 'xp', total: n?.n || 0, offset, rows: rows.results, countries: countries.results }, 200, 60);
+  return json({ by: byKey, total: n?.n || 0, offset, rows: rows.results, countries: countries.results }, 200, 60);
 }
 
 async function history(env: Env, raw: string): Promise<Response> {
@@ -410,6 +456,9 @@ async function refresh(env: Env) {
   }
 }
 
+/** routes that take ?id= (a SteamID costs nothing to read, a nickname is one more Steam call) */
+const ID_ROUTES = new Set(['/api/profile', '/api/inventory', '/api/faceit', '/api/history']);
+
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
@@ -417,16 +466,22 @@ export default {
     const isPush = req.method === 'POST' && url.pathname === '/api/servers/push';
     if (req.method !== 'GET' && !isPush) return json({ error: 'Только GET' }, 405);
     try {
-      if (isPush) return await pushServers(req, env);
+      if (isPush) return await pushServers(req, env); // has its own check: only the relay's addresses
+      const who = clientKey(req.headers.get('CF-Connecting-IP') || '');
+      if (await limited(env.RL_API, who)) return tooMany();
       if (url.pathname === '/api/servers') return await servers(env); // needs no keys
       if (!env.STEAM_API_KEY && url.pathname !== '/api/health') throw new HttpError(503, 'Ключ Steam API не настроен');
+      const id = url.searchParams.get('id') || '';
+      // requests that spend the Steam Web API key: a whole profile, or turning a nickname into a SteamID
+      const spendsKey = url.pathname === '/api/profile' || (ID_ROUTES.has(url.pathname) && !!parseInput(id).vanity);
+      if (spendsKey && (await limited(env.RL_STEAM, who))) return tooMany();
       switch (url.pathname) {
         case '/api/health': return json({ ok: true, key: !!env.STEAM_API_KEY, faceit: !!env.FACEIT_API_KEY });
-        case '/api/faceit': return await faceit(env, url.searchParams.get('id') || '', ctx);
-        case '/api/profile': return await profile(env, url.searchParams.get('id') || '', ctx, url.searchParams.get('fresh') === '1');
-        case '/api/inventory': return await inventory(env, url.searchParams.get('id') || '', ctx);
+        case '/api/faceit': return await faceit(env, id, ctx);
+        case '/api/profile': return await profile(env, id, ctx, url.searchParams.get('fresh') === '1');
+        case '/api/inventory': return await inventory(env, id, ctx);
         case '/api/ladder': return await ladder(env, url);
-        case '/api/history': return await history(env, url.searchParams.get('id') || '');
+        case '/api/history': return await history(env, id);
         default: return json({ error: 'Нет такого адреса', endpoints: ['/api/profile?id=', '/api/inventory?id=', '/api/ladder?by=xp', '/api/history?id=', '/api/servers'] }, 404);
       }
     } catch (e) {

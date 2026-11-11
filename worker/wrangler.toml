@@ -14,6 +14,21 @@ database_id = "__D1_ID__"
 # servers allowed to POST the Cybershoke list (tools/cybershoke-relay, VPS in Finland)
 RELAY_IPS = "5.180.172.28"
 
+# Request limits per visitor address (the API is public, no login). Counted per Cloudflare location; period is 10 or 60 s.
+# namespace_id is any whole number unique in the Cloudflare account.
+# RL_API — every request: the «Дуэли» list is polled twice a minute, a profile page makes about five requests.
+[[ratelimits]]
+name = "RL_API"
+namespace_id = "730101"
+simple = { limit = 120, period = 60 }
+
+# RL_STEAM — requests that spend the Steam Web API key (a profile = 6 calls; the key allows 100 000 a day and the
+# «Мои матчи» workflow uses the same one): 10 profiles a minute is at most ~86 000 calls a day from one address.
+[[ratelimits]]
+name = "RL_STEAM"
+namespace_id = "730102"
+simple = { limit = 10, period = 60 }
+
 [triggers]
 crons = ["*/10 * * * *"]
 

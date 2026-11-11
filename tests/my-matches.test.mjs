@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import {
-  SyncError, accountToSteam64, decodeShareCode, encodeShareCode, isReplayUrl, isShareCode, makeMasker, mergeMatch,
+  SyncError, accountToSteam64, decodeShareCode, encodeShareCode, envWithoutSecrets, isReplayUrl, isShareCode, makeMasker, mergeMatch,
   missingSecrets, nextShareCodes, parseGcMatch, pendingCodes, steam64ToAccount, upsertMatch,
 } from '../scripts/lib/matches.mjs';
 import { openGcSession } from '../scripts/lib/gc-session.mjs';
@@ -277,6 +277,15 @@ test('my-matches.mjs without secrets: names the missing ones, exits 0', () => {
   assert.ok(!stdout.includes('x'.repeat(32)));
   assert.match(fs.readFileSync(out, 'utf8'), /changed=false/);
   fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test('the demo parser (a third-party package) is started without the Steam secrets and the GitHub token', () => {
+  const env = { PATH: '/usr/bin', LD_LIBRARY_PATH: '/opt/python/lib', STEAM_API_KEY: 'k', CS2_AUTH_CODE: 'a', CS2_LAST_SHARECODE: 'c', STEAM_BOT_TOKEN: 't', GH_TOKEN: 'g', GITHUB_TOKEN: 'g2', CS2_STEAMID: OWNER };
+  const child = envWithoutSecrets(env);
+  assert.deepEqual(child, { PATH: '/usr/bin', LD_LIBRARY_PATH: '/opt/python/lib', CS2_STEAMID: OWNER });
+  assert.equal(env.STEAM_BOT_TOKEN, 't'); // the script's own environment is left alone
+  const src = fs.readFileSync(path.join(ROOT, 'scripts', 'my-matches.mjs'), 'utf8');
+  assert.match(src, /execFile\(PYTHON,[^;]*env: envWithoutSecrets\(env\)/s);
 });
 
 // ---------------------------------------------------------------- demo statistics (Python)

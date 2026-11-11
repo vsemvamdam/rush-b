@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { href } from '../lib/router';
+import { extUrl, href } from '../lib/router';
 
 /* «Новости» column of a team page: CS2 headlines that name the team, its players or coach.
    scripts/fetch-news.mjs (workflow news.yml, every 20 min) reads the RSS of Cybersport.ru, Sports.ru, HLTV and
@@ -98,7 +98,7 @@ export default function TeamNews({ slug, name, people }: { slug: string; name: s
                 <article className="tm-nw">
                   <time className={'tm-nw-time num' + (it.ts > fresh ? ' new' : '')} dateTime={new Date(it.ts * 1000).toISOString()}>{hhmm(it.ts)}</time>
                   <div className="tm-nw-body">
-                    <a className="tm-nw-t" href={it.u} target="_blank" rel="noreferrer nofollow">{it.t}</a>
+                    <a className="tm-nw-t" href={extUrl(it.u)} target="_blank" rel="noreferrer nofollow">{it.t}</a>
                     <div className="tm-nw-meta">
                       <span>{src?.[0] || it.s}</span>
                       {src?.[1] === 'en' && <i className="tm-nw-tag">EN</i>}

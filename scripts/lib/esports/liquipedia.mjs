@@ -70,7 +70,7 @@ function opponent(node) {
   return { n: lit || 'TBD', tbd: true };
 }
 
-function streamLinks(container) {
+export function streamLinks(container) {
   const out = [];
   const seen = new Set();
   for (const a of container.findAll('a[href]')) {
@@ -85,7 +85,8 @@ function streamLinks(container) {
       if (p.startsWith('twitch') && /^\w+$/.test(id)) u = 'https://www.twitch.tv/' + id;
       else u = WIKI + 'Special:Stream/' + m[1] + '/' + m[2];
       p = p.replace(/[^a-z]/g, '');
-    } else if (/^https?:\/\/(www\.)?(twitch\.tv|kick\.com|youtube\.com\/(live|watch|@)|youtu\.be)/.test(href) && !a.closest('.match-info-vods-area')) {
+    } else if (/^https?:\/\/(www\.)?(twitch\.tv\/|kick\.com\/|youtube\.com\/(live|watch|@)|youtu\.be\/)/.test(href) && !a.closest('.match-info-vods-area')) {
+      // the «/» right after the host matters: «twitch.tv.example.com» is somebody else's site
       p = /twitch/.test(href) ? 'twitch' : /kick/.test(href) ? 'kick' : 'youtube';
       u = href;
     } else continue;

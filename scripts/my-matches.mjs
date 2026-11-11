@@ -44,7 +44,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { ROOT, STORE, readJSON, writeJSON, sleep } from './lib/common.mjs';
 import {
-  SyncError, decodeShareCode, emptyState, isSteam64, isReplayUrl, makeMasker, mergeMatch, missingSecrets,
+  SyncError, decodeShareCode, emptyState, envWithoutSecrets, isSteam64, isReplayUrl, makeMasker, mergeMatch, missingSecrets,
   nextShareCodes, parseGcMatch, pendingCodes, upsertMatch,
 } from './lib/matches.mjs';
 import { openGcSession } from './lib/gc-session.mjs';
@@ -243,8 +243,9 @@ async function processDemo(url, steamid) {
     await pipeline(Readable.fromWeb(res.body), createWriteStream(file));
     const json = path.join(dir, 'match.json');
     await new Promise((resolve, reject) => {
+      // the demo parser is somebody else's package and needs only the file: it runs without our secrets
       execFile(PYTHON, ['-I', path.join(ROOT, 'tools', 'matches', 'match_stats.py'), file, '--steamid', steamid, '--out', json],
-        { timeout: 15 * 60000, maxBuffer: 16 << 20 },
+        { timeout: 15 * 60000, maxBuffer: 16 << 20, env: envWithoutSecrets(env) },
         (err, _stdout, stderr) => (err ? reject(new Error(lastLine(stderr) || err.message)) : resolve()));
     });
     return JSON.parse(await fs.readFile(json, 'utf8'));

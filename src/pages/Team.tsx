@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Spinner } from '../components/ui';
-import { href, setQuery, useRoute } from '../lib/router';
+import { extUrl, href, setQuery, useRoute } from '../lib/router';
 import { loadLpLogos, loadTeamIndex, teamKeys, useTeamLogos, useTeamSlug, type TeamIndex } from '../lib/teams';
 import { countryFromFlag, countryRu, flagUrl, ROLE_RU } from '../lib/people';
 import TeamNews from '../components/TeamNews';
@@ -150,7 +150,7 @@ export default function Team({ slug }: { slug: string }) {
           </div>
           {linkList.length > 0 && (
             <div className="tm-links">
-              {linkList.map(([k, ru, url]) => <a key={k} href={url(inf.links![k])} target="_blank" rel="noreferrer nofollow">{ru}</a>)}
+              {linkList.map(([k, ru, url]) => <a key={k} href={extUrl(url(inf.links![k]))} target="_blank" rel="noreferrer nofollow">{ru}</a>)}
             </div>
           )}
         </div>

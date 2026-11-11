@@ -23,6 +23,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { liquipediaClient, parseInfobox, UA } from './lib/esports/liquipedia.mjs';
+import { imageKind } from './lib/common.mjs';
 import { noRefs, parseSquad, plain, templates } from './lib/wikitext.mjs';
 
 // same keys as teamKeys() in scripts/build-db.mjs and src/lib/teams.ts (the site looks logos up by them)
@@ -382,8 +383,11 @@ async function main() {
       if (r.status === 429) { console.log('Liquipedia просит подождать — остальное в следующий раз'); break; }
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const buf = Buffer.from(await r.arrayBuffer());
-      const ext = (/\.(png|jpe?g|webp|gif|svg)(?:$|\?)/i.exec(idx.files[f].url)?.[1] || 'png').toLowerCase().replace('jpeg', 'jpg');
-      const name = crypto.createHash('sha1').update(f).digest('hex').slice(0, 12) + '.' + (ext === 'svg' ? 'svg' : ext);
+      // The file is published on our own address, so it has to be a real bitmap: an SVG (or HTML under an image
+      // name) opened by a direct link would run its scripts as the site. The type is read from the bytes, not the URL.
+      const ext = imageKind(buf);
+      if (!ext) throw new Error('не растровая картинка');
+      const name = crypto.createHash('sha1').update(f).digest('hex').slice(0, 12) + '.' + ext;
       fs.writeFileSync(path.join(STORE, 'img', name), buf);
       idx.files[f] = { img: name };
       got++;

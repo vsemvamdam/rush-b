@@ -47,7 +47,11 @@ jobs:
       - run: pip install huggingface_hub pandas pyarrow
       - run: scripts/store.sh pull nades-proc
       - id: p
-        run: python3 tools/demos/opencs2.py plan --limit "${{ inputs.limit || '480' }}" --shards "${{ inputs.shards || '16' }}" --out plan.json
+        # значения из формы запуска передаются через переменные окружения, а не подставляются в текст команды
+        env:
+          LIMIT: ${{ inputs.limit || '480' }}
+          SHARDS: ${{ inputs.shards || '16' }}
+        run: python3 tools/demos/opencs2.py plan --limit "$LIMIT" --shards "$SHARDS" --out plan.json
       - uses: actions/upload-artifact@v4
         with:
           name: plan
@@ -72,7 +76,9 @@ jobs:
         with:
           name: plan
       - name: Разбор своей части демок
-        run: python3 tools/demos/opencs2.py shard --plan plan.json --index ${{ matrix.shard }}
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: python3 tools/demos/opencs2.py shard --plan plan.json --index "$SHARD"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -114,12 +120,14 @@ jobs:
       - name: Собрать раскидки, коллауты и игроков
         run: python3 tools/demos/build_lineups.py --out store/nades-site
       - name: Сохранить и пересобрать сайт
+        env:
+          REMAINING: ${{ needs.plan.outputs.remaining }}
         run: |
           scripts/store.sh push nades-raw
           scripts/store.sh push nades-proc
           scripts/store.sh push nades-site
           gh workflow run site.yml -f quick=true
-          if [ "${{ needs.plan.outputs.remaining }}" != "0" ]; then
-            echo "осталось ${{ needs.plan.outputs.remaining }} демок — запускаю следующую порцию"
+          if [ "$REMAINING" != "0" ]; then
+            echo "осталось $REMAINING демок — запускаю следующую порцию"
             gh workflow run nades-all.yml
           fi
