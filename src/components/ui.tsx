@@ -44,7 +44,7 @@ export function SkinCard({ s, prices, to, onClick, extra }: { s: Skin; prices: P
         </div>
         <div className="fin" title={s.ru ? `${s.name}\n${s.ru}` : s.name}>{fin || (s.vanilla ? 'Ванильный' : wpn)}</div>
         <div className="price muted">
-          {range ? (range[0] === range[1] ? money(range[0], prices, currency) : `${money(range[0], prices, currency, { compact: true })} – ${money(range[1], prices, currency, { compact: true })}`) : '—'}
+          {range ? (range[0] === range[1] ? <span className="p-max">{money(range[0], prices, currency)}</span> : <><span className="p-min">{money(range[0], prices, currency, { compact: true })}</span> – <span className="p-max">{money(range[1], prices, currency, { compact: true })}</span></>) : '—'}
         </div>
         {extra}
       </div>
@@ -137,5 +137,5 @@ export function NoPricesNotice({ prices }: { prices: Prices | null }) {
 export function Updated({ prices }: { prices: Prices | null }) {
   if (!prices?.updated) return null;
   const d = new Date(prices.updated);
-  return <span className="tiny faint">Цены обновлены {d.toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</span>;
+  return <span className="tiny faint"><span className="live-dot" aria-hidden="true" />Цены обновлены {d.toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</span>;
 }

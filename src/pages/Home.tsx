@@ -40,7 +40,7 @@ export default function Home() {
           <a className="btn" href="#/tradeup">Калькулятор крафтов</a>
           <a className="btn ghost" href="#/nades">Раскидки профи</a>
         </div>
-        {db && <div className="row small muted" style={{ gap: 18 }}><span><b className="num">{db.skins.length.toLocaleString('ru-RU')}</b> скинов</span><span><b className="num">{db.collections.length}</b> коллекций</span><span><b className="num">{db.collections.filter((c) => c.gold.length).length}</b> коллекций с ножами/перчатками</span><Updated prices={prices} /></div>}
+        {db && <div className="hero-stats"><span><b className="num">{db.skins.length.toLocaleString('ru-RU')}</b> скинов</span><span><b className="num">{db.collections.length}</b> коллекций</span><span><b className="num">{db.collections.filter((c) => c.gold.length).length}</b> коллекций с ножами/перчатками</span><Updated prices={prices} /></div>}
       </section>
       <section className="feature-grid">
         {FEATURES.map((f) => (

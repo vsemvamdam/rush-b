@@ -101,7 +101,8 @@ function Search() {
   }, []);
   const go = (to: string) => { navigate(to); setOpen(false); setQ(''); };
   return (
-    <div ref={box} className="header-search" style={{ position: 'relative', width: 'clamp(140px, 13vw, 210px)' }}>
+    <div ref={box} className="header-search" style={{ position: 'relative', width: 'clamp(170px, 18vw, 240px)' }}>
+      <span className="search-ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg></span>
       <input
         className="input"
         style={{ width: '100%' }}
@@ -165,9 +166,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <option value="EUR">€ EUR</option>
               <option value="CNY">¥ CNY</option>
             </select>
-            <button className="btn icon" title={prefs.theme === 'dark' ? 'Тёмная тема' : prefs.theme === 'light' ? 'Светлая тема' : 'Тема как в системе'} onClick={() => setPrefs({ theme: prefs.theme === 'dark' ? 'light' : prefs.theme === 'light' ? 'auto' : 'dark' })}>
-              {prefs.theme === 'dark' ? '🌙' : prefs.theme === 'light' ? '☀️' : '🌗'}
-            </button>
+            <div className="seg theme-seg" role="radiogroup" aria-label={'\u0422\u0435\u043c\u0430'}>
+              {([['light', '\u2600\uFE0F', '\u0421\u0432\u0435\u0442\u043b\u0430\u044f \u0442\u0435\u043c\u0430'], ['auto', '\uD83C\uDF17', '\u0422\u0435\u043c\u0430 \u043a\u0430\u043a \u0432 \u0441\u0438\u0441\u0442\u0435\u043c\u0435'], ['dark', '\uD83C\uDF19', '\u0422\u0451\u043c\u043d\u0430\u044f \u0442\u0435\u043c\u0430']] as const).map(([v, ic, t]) => (
+                <button key={v} type="button" role="radio" aria-checked={prefs.theme === v} className={prefs.theme === v ? 'on' : ''} title={t} aria-label={t} onClick={() => setPrefs({ theme: v })}>{ic}</button>
+              ))}
+            </div>
             <button className="btn icon menu-btn" onClick={() => setMenu((m) => !m)} aria-label="Меню">☰</button>
           </div>
         </div>
@@ -178,7 +181,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <footer className="footer">
         <div className="container row between">
           <span>RUSH B — фанатский проект, не связан с Valve. Изображения предметов — Steam CDN; база предметов — ByMykel/CSGO-API.</span>
-          <span><a className="link" href="https://github.com/vsemvamdam/rush-b" target="_blank" rel="noreferrer">GitHub</a> · <a className="link" href="#/about">О данных</a></span>
+          <span className="footer-links"><a className="link" href="https://t.me/vpzjournal" target="_blank" rel="noreferrer">Telegram</a><a className="link" href="https://github.com/vsemvamdam/rush-b" target="_blank" rel="noreferrer">GitHub</a><a className="link" href="#/about">О данных</a></span>
         </div>
       </footer>
     </div>
