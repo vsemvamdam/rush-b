@@ -14,6 +14,12 @@ export class SyncError extends Error {
 }
 
 // ---------------------------------------------------------------- secrets / masking
+/** copy of the environment for a child process that has no use for the Steam secrets or the GitHub token */
+export function envWithoutSecrets(env) {
+  const out = { ...env };
+  for (const n of [...SECRET_NAMES, 'GH_TOKEN', 'GITHUB_TOKEN']) delete out[n];
+  return out;
+}
 export function missingSecrets(env) {
   return SECRET_NAMES.filter((n) => !String(env[n] || '').trim());
 }

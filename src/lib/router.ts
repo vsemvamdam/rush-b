@@ -3,11 +3,15 @@ import { useSyncExternalStore } from 'react';
 // Hash router: works on GitHub Pages without server rewrites. URLs look like #/skin/<id>?w=2
 export type Route = { path: string; parts: string[]; query: URLSearchParams };
 
+/** a stray «%» in a pasted link must not leave the visitor with a blank page */
+function safeDecode(s: string) {
+  try { return decodeURIComponent(s); } catch { return s; }
+}
 function parse(): Route {
   const h = location.hash.replace(/^#/, '') || '/';
   const [p, q = ''] = h.split('?');
   const path = p || '/';
-  return { path, parts: path.split('/').filter(Boolean).map(decodeURIComponent), query: new URLSearchParams(q) };
+  return { path, parts: path.split('/').filter(Boolean).map(safeDecode), query: new URLSearchParams(q) };
 }
 let current = parse();
 let currentKey = location.hash;
@@ -39,3 +43,12 @@ export function setQuery(params: Record<string, string | number | null | undefin
   navigate(current.path + (s ? '?' + s : ''), true);
 }
 export const href = (to: string) => '#' + to;
+/**
+ * A link that came with data (RSS, Liquipedia, the demo archive, the stats server) may become an href only when it is
+ * plain http(s): React does not stop «javascript:» and other schemes. Anything else → undefined (no link).
+ */
+export function extUrl(u: unknown): string | undefined {
+  if (typeof u !== 'string') return undefined;
+  const s = u.trim();
+  return /^https?:\/\/[^\s/?#]/i.test(s) ? s : undefined;
+}

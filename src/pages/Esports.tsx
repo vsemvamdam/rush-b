@@ -1,7 +1,7 @@
 import { useTeamLogos, useTourIcons } from '../lib/teams';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Spinner } from '../components/ui';
-import { setQuery, useRoute } from '../lib/router';
+import { extUrl, setQuery, useRoute } from '../lib/router';
 import './Esports.css';
 
 /* Data: JSON built by scripts/fetch-esports.mjs in GitHub Actions every ~20 min and force-pushed to the
@@ -470,7 +470,7 @@ function MatchRow({ m, data, now, oddsCol }: { m: Match; data: Data; now: number
           <div className="es-actions">
             {soon && <span className="tiny es-soon">{soon}</span>}
             {m.streams?.map((s) => (
-              <a key={s.u} className={'es-stream p-' + s.p} href={s.u} target="_blank" rel="noreferrer nofollow">{STREAM[s.p] || s.p}</a>
+              <a key={s.u} className={'es-stream p-' + s.p} href={extUrl(s.u)} target="_blank" rel="noreferrer nofollow">{STREAM[s.p] || s.p}</a>
             ))}
             {o && (
               <button className={'es-books' + (open ? ' on' : '')} onClick={() => setOpen((x) => !x)} aria-expanded={open} title="Коэффициенты по источникам">
@@ -573,7 +573,7 @@ function TourCard({ t, now }: { t: Tournament; now: number }) {
             Матчи{t.m.live ? ` · ${t.m.live} live` : t.m.up ? ` · ${t.m.up}` : ''}
           </button>
         )}
-        <a className="btn small ghost" href={t.url} target="_blank" rel="noreferrer">Liquipedia ↗</a>
+        <a className="btn small ghost" href={extUrl(t.url)} target="_blank" rel="noreferrer">Liquipedia ↗</a>
       </div>
     </div>
   );

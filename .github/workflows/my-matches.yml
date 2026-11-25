@@ -23,13 +23,16 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       CS2_STEAMID: '76561198077054958'
-      STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
-      CS2_AUTH_CODE: ${{ secrets.CS2_AUTH_CODE }}
-      CS2_LAST_SHARECODE: ${{ secrets.CS2_LAST_SHARECODE }}
-      STEAM_BOT_TOKEN: ${{ secrets.STEAM_BOT_TOKEN }}
     steps:
+      # Секреты Steam получают только два шага — проверка и сама синхронизация. Установка пакетов (npm, pip)
+      # идёт без них: скрипты установки чужих пакетов не должны видеть токен аккаунта и ключ API.
       - name: Проверить секреты
         id: chk
+        env:
+          STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
+          CS2_AUTH_CODE: ${{ secrets.CS2_AUTH_CODE }}
+          CS2_LAST_SHARECODE: ${{ secrets.CS2_LAST_SHARECODE }}
+          STEAM_BOT_TOKEN: ${{ secrets.STEAM_BOT_TOKEN }}
         run: |
           missing=""
           [ -n "$STEAM_API_KEY" ] || missing="$missing STEAM_API_KEY"
@@ -65,6 +68,11 @@ jobs:
       - name: Синхронизация (Steam → координатор CS2 → демки)
         id: sync
         if: steps.chk.outputs.ok == '1'
+        env:
+          STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
+          CS2_AUTH_CODE: ${{ secrets.CS2_AUTH_CODE }}
+          CS2_LAST_SHARECODE: ${{ secrets.CS2_LAST_SHARECODE }}
+          STEAM_BOT_TOKEN: ${{ secrets.STEAM_BOT_TOKEN }}
         run: node scripts/my-matches.mjs
       - name: Сохранить хранилище
         if: always() && steps.chk.outputs.ok == '1' && steps.sync.outputs.changed == 'true'

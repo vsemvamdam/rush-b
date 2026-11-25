@@ -21,3 +21,4 @@ test-results/
 playwright-report/
 tests/.servers-worker.bundle.mjs
 tests/.servers-lib.bundle.mjs
+tests/.worker-api.bundle.mjs

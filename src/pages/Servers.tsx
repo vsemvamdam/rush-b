@@ -192,7 +192,11 @@ export default function Servers() {
                 <span className="row small muted" style={{ gap: 8 }}><Flag loc={loc(joined.loc)} />{loc(joined.loc).city} · {joined.players}/{joined.max} игроков{joined.free <= 0 ? ' · сейчас мест нет' : ''}</span>
               </>
             ) : (
-              <b className="srv-join-title mono">{join.ip}:{join.port}</b>
+              <>
+                <b className="srv-join-title mono">{join.ip}:{join.port}</b>
+                {/* the address comes from the link, not from our list — anybody can put any server there */}
+                {data && <span className="small warn">Этого сервера сейчас нет в списке Cybershoke. Подключайся, только если знаешь, кто прислал ссылку.</span>}
+              </>
             )}
           </div>
           <div className="srv-join-act">
