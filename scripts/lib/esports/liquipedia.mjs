@@ -61,12 +61,12 @@ function opponent(node) {
   if (!node) return null;
   const a = node.find('.name')?.find('a') || node.find('a[title]');
   if (a) {
-    const short = a.clean;
+    const short = a.find('.team-shortname')?.clean || a.clean;
     const title = (a.attr('title') || short).replace(/ \(page does not exist\)$/, '');
     const full = title.replace(/\s*\([^)]*\)$/, ''); // "MAYBE (Ukrainian team)" → "MAYBE"
     return { n: short || full, f: full !== short ? full : undefined, page: pageFromHref(a.attr('href')) || title };
   }
-  const lit = node.clean.replace(/[\u200b-\u200d\ufeff]/g, '').trim(); // "TBD", "Group B 2nd Place", zero-width space
+  const lit = (node.find('.team-shortname')?.clean || node.clean).replace(/[\u200b-\u200d\ufeff]/g, '').trim();
   return { n: lit || 'TBD', tbd: true };
 }
 
@@ -145,6 +145,41 @@ export function parseMatchInfo(mi, { tier, now = Date.now() / 1000 } = {}) {
   return m;
 }
 
+function parseMatchTickerCard(card, tier, now) {
+  const timer = card.find('[data-timestamp]');
+  const start = Number(timer?.attr('data-timestamp'));
+  const slots = card.findAll('.match-ticker-card__opponent');
+  if (!Number.isFinite(start) || start <= 0 || slots.length !== 2) return null;
+
+  const [t1, t2] = slots.map((slot) => opponent(slot.children.find((child) => child.tag)));
+  if (!t1 || !t2) return null;
+  const finished = timer.attr('data-finished') === 'finished';
+  const status = finished ? 'finished' : start <= now ? 'live' : 'upcoming';
+  const approx = !finished && timer.hasClass('timer-object-datetime-only');
+  const scores = slots.map((slot) => slot.children.filter((child) => child.tag)[1]?.clean || '');
+  const score = status !== 'upcoming' && scores.every((s) => /^\d+$/.test(s)) ? scores.map(Number) : undefined;
+  const winner = slots[0].hasClass('winner') ? 1 : slots[1].hasClass('winner') ? 2 : undefined;
+
+  const label = card.find('.match-ticker-card__header')?.children.find((child) => child.tag === 'div')?.clean || '';
+  const format = /(?:^|\s+-\s+)Bo\s?(\d+)$/i.exec(label);
+  const stage = format ? label.slice(0, format.index) : label;
+  const tournament = card.find('.match-ticker-card-tournament-name');
+  const link = tournament?.find('a');
+  const tpage = (link?.attr('title') || pageFromHref(link?.attr('href')) || '').split('#')[0].replace(/_/g, ' ');
+  const streams = finished ? [] : streamLinks(card);
+  return {
+    t1, t2, start, status, tier,
+    tour: tournament?.clean || tpage,
+    ...(tpage ? { tpage } : {}),
+    ...(stage ? { stage } : {}),
+    ...(format ? { bo: Number(format[1]) } : {}),
+    ...(approx ? { approx } : {}),
+    ...(score ? { score } : {}),
+    ...(finished && winner ? { winner } : {}),
+    ...(streams.length ? { streams } : {}),
+  };
+}
+
 export const matchKey = (m) => {
   const a = m.t1.n.toLowerCase();
   const b = m.t2.n.toLowerCase();
@@ -159,6 +194,10 @@ export function parseTickers(html, now = Date.now() / 1000) {
   const blocks = sections.length ? sections : [root];
   for (const sec of blocks) {
     const tier = TIER[sec.attr('data-tier')] || undefined;
+    for (const card of sec.findAll('.match-ticker-card')) {
+      const m = parseMatchTickerCard(card, tier, now);
+      if (m) out.push(m);
+    }
     for (const mi of sec.findAll('.match-info')) {
       const m = parseMatchInfo(mi, { tier, now });
       if (m) out.push(m);
@@ -177,7 +216,9 @@ export async function fetchMatches(lp, now) {
   const j = await lp.call({ action: 'parse', title: 'Liquipedia:Matches', contentmodel: 'wikitext', text: TICKER_TEXT, prop: 'text', disablelimitreport: '1', disableeditsection: '1' }, 'lp-tickers');
   const html = j.parse?.text;
   if (typeof html !== 'string') throw new Error('Liquipedia: пустой ответ parse');
-  return parseTickers(html, now);
+  const matches = parseTickers(html, now);
+  if (!matches.length) throw new Error('Liquipedia: не удалось разобрать ни одного матча');
+  return matches;
 }
 
 // ───────────────────────── tournaments ─────────────────────────

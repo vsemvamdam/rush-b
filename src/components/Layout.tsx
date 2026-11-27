@@ -137,41 +137,56 @@ function Search() {
   );
 }
 
+function HeaderPrefs({ className }: { className: string }) {
+  const prefs = usePrefs();
+  return (
+    <div className={'header-prefs ' + className}>
+      <select className="select" value={prefs.currency} onChange={(e) => setPrefs({ currency: e.target.value as Currency })} aria-label="Валюта" title="Валюта">
+        <option value="RUB">₽ RUB</option>
+        <option value="USD">$ USD</option>
+        <option value="EUR">€ EUR</option>
+        <option value="CNY">¥ CNY</option>
+      </select>
+      <div className="seg theme-seg" role="radiogroup" aria-label="Тема">
+        {([['light', '☀️', 'Светлая тема'], ['auto', '🌗', 'Тема как в системе'], ['dark', '🌙', 'Тёмная тема']] as const).map(([v, icon, label]) => (
+          <button key={v} type="button" role="radio" aria-checked={prefs.theme === v} className={prefs.theme === v ? 'on' : ''} title={label} aria-label={label} onClick={() => setPrefs({ theme: v })}>{icon}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const route = useRoute();
-  const prefs = usePrefs();
   const [menu, setMenu] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
   useEffect(() => setMenu(false), [route.path]);
   const active = (to: string) => route.path === to || route.path.startsWith(to + '/') || (to === '/skins' && route.path.startsWith('/skin/')) || (to === '/collections' && route.path.startsWith('/collection/')) || (to === '/players' && (route.path.startsWith('/player/') || route.path.startsWith('/team/')));
   return (
     <div className="app">
-      <header className="header">
+      <header className="header" onKeyDown={(event) => {
+        if (menu && event.key === 'Escape') {
+          setMenu(false);
+          menuButton.current?.focus();
+        }
+      }}>
         <div className="container header-inner">
           <Logo />
-          <nav className={'nav' + (menu ? ' open' : '')}>
-            {NAV.map((n) => <a key={n.to} href={href(n.to)} className={active(n.to) ? 'active' : ''}>{n.label}</a>)}
+          <nav id="site-navigation" className={'nav' + (menu ? ' open' : '')} aria-label="Разделы сайта">
+            {NAV.map((n) => <a key={n.to} href={href(n.to)} className={active(n.to) ? 'active' : ''} onClick={() => setMenu(false)}>{n.label}</a>)}
             <div className="nav-more">
               <button type="button" className={'nav-more-btn' + (MORE.some((n) => active(n.to)) ? ' active' : '')}>Ещё ▾</button>
               <div className="nav-more-menu">
-                {MORE.map((n) => <a key={n.to} href={href(n.to)} className={active(n.to) ? 'active' : ''}>{n.label}</a>)}
+                {MORE.map((n) => <a key={n.to} href={href(n.to)} className={active(n.to) ? 'active' : ''} onClick={() => setMenu(false)}>{n.label}</a>)}
               </div>
             </div>
+            <HeaderPrefs className="menu-prefs" />
           </nav>
           <div className="header-tools">
             <Search />
             <a className="btn icon search-btn" href="#/skins" aria-label="Поиск">🔍</a>
-            <select className="select" value={prefs.currency} onChange={(e) => setPrefs({ currency: e.target.value as Currency })} aria-label="Валюта" title="Валюта">
-              <option value="RUB">₽ RUB</option>
-              <option value="USD">$ USD</option>
-              <option value="EUR">€ EUR</option>
-              <option value="CNY">¥ CNY</option>
-            </select>
-            <div className="seg theme-seg" role="radiogroup" aria-label={'\u0422\u0435\u043c\u0430'}>
-              {([['light', '\u2600\uFE0F', '\u0421\u0432\u0435\u0442\u043b\u0430\u044f \u0442\u0435\u043c\u0430'], ['auto', '\uD83C\uDF17', '\u0422\u0435\u043c\u0430 \u043a\u0430\u043a \u0432 \u0441\u0438\u0441\u0442\u0435\u043c\u0435'], ['dark', '\uD83C\uDF19', '\u0422\u0451\u043c\u043d\u0430\u044f \u0442\u0435\u043c\u0430']] as const).map(([v, ic, t]) => (
-                <button key={v} type="button" role="radio" aria-checked={prefs.theme === v} className={prefs.theme === v ? 'on' : ''} title={t} aria-label={t} onClick={() => setPrefs({ theme: v })}>{ic}</button>
-              ))}
-            </div>
-            <button className="btn icon menu-btn" onClick={() => setMenu((m) => !m)} aria-label="Меню">☰</button>
+            <HeaderPrefs className="desktop-prefs" />
+            <button ref={menuButton} type="button" className="btn icon menu-btn" aria-controls="site-navigation" aria-expanded={menu} onClick={() => setMenu((m) => !m)} aria-label="Меню">☰</button>
           </div>
         </div>
       </header>

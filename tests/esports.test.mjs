@@ -2,7 +2,7 @@
 // HTML samples are trimmed match tickers from Liquipedia (CC BY-SA 3.0).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseTickers, parseTournamentList, parseInfobox, tournamentFromInfobox } from '../scripts/lib/esports/liquipedia.mjs';
+import { fetchMatches, parseTickers, parseTournamentList, parseInfobox, tournamentFromInfobox } from '../scripts/lib/esports/liquipedia.mjs';
 import { parseEvents, csSports } from '../scripts/lib/esports/polymarket.mjs';
 import { parseFixtures, parseOdds } from '../scripts/lib/esports/oddspapi.mjs';
 import { teamKeys, sameTeam, findMatch, summarizeOdds } from '../scripts/lib/esports/teams.mjs';
@@ -41,6 +41,44 @@ test('Liquipedia ticker: finished, live with streams, bracket placeholders', () 
   assert.equal(tbd.t1.n, 'Group A 1st Place');
   assert.equal(tbd.t2.n, 'TBD'); // zero-width space only
   assert.equal(tbd.status, 'upcoming');
+});
+
+test('Liquipedia new ticker cards preserve Major scores, status, and stage', () => {
+  const slot = (team, score, winner = false) =>
+    `<div class="match-ticker-card&#95;&#95;opponent${winner ? ' winner' : ''}"><div>${team}</div><div>${score}</div></div>`;
+  const team = (short, full) => `<span class="name"><a title="${full}"><div class="team-shortname">${short}</div><div class="team-name">${full}</div></a></span>`;
+  const card = (start, stage, opponents, finished = false) => `
+    <div class="match-ticker-card">
+      <div class="match-ticker-card&#95;&#95;header"><span data-timestamp="${start}"${finished ? ' data-finished="finished"' : ''}></span><div>Round 5 - Bo3</div></div>
+      <div class="match-ticker-card&#95;&#95;opponents">${opponents}</div>
+      <div class="match-ticker-card-tournament-name"><a title="PGL/2026/Singapore/${stage}">PGL Major Singapore 2026</a></div>
+      <a href="/counterstrike/Special:Stream/twitch/PGL">Watch now</a>
+    </div>`;
+  const live = card(1795780800, 'Stage 1', slot(team('M80', 'M80'), 1) + slot(team('100T', '100 Thieves'), 1));
+  const done = card(1795768200, 'Stage 1', slot(team('Imperial', 'Imperial Esports'), 2, true) + slot(team('Wildcard', 'Wildcard'), 1), true);
+  const tbd = slot('<span class="team-shortname">TBD</span><span class="team-name">TBD</span>', '');
+  const future = card(1796104800, 'Stage 2', tbd + tbd);
+  const matches = parseTickers(html(1, 'upcoming', live + future) + html(1, 'recent', done), 1795783957);
+
+  assert.equal(matches.length, 3);
+  assert.deepEqual(matches.map((m) => m.status), ['live', 'upcoming', 'finished']);
+  assert.equal(matches[0].t2.n, '100T');
+  assert.equal(matches[0].t2.f, '100 Thieves');
+  assert.equal(matches[0].tier, 'S');
+  assert.equal(matches[0].tpage, 'PGL/2026/Singapore/Stage 1');
+  assert.equal(matches[0].stage, 'Round 5');
+  assert.equal(matches[0].bo, 3);
+  assert.deepEqual(matches[0].score, [1, 1]);
+  assert.equal(matches[0].streams[0].u, 'https://www.twitch.tv/PGL');
+  assert.deepEqual(matches[1].t1, { n: 'TBD', tbd: true });
+  assert.deepEqual(matches[2].score, [2, 1]);
+  assert.equal(matches[2].winner, 1);
+  assert.equal(matches[2].streams, undefined);
+});
+
+test('Liquipedia refuses to replace the match feed with an unparseable response', async () => {
+  const lp = { call: async () => ({ parse: { text: html(1, 'upcoming', '<div class="unsupported-card">M80</div>') } }) };
+  await assert.rejects(fetchMatches(lp, 1795783957), /не удалось разобрать ни одного матча/);
 });
 
 test('Liquipedia:Tournaments list and infobox', () => {

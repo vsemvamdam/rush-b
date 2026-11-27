@@ -2,77 +2,8 @@ import { useTeamLogos, useTourIcons } from '../lib/teams';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Spinner } from '../components/ui';
 import { setQuery, useRoute } from '../lib/router';
+import { MATCH_SCHEDULE_MAX_AGE, useEsports, useNow, type Data, type Match, type Odds, type Source, type Team, type Tournament } from '../lib/esports';
 import './Esports.css';
-
-/* Data: JSON built by scripts/fetch-esports.mjs in GitHub Actions every ~20 min and force-pushed to the
-   orphan branch esports-data — the static site reads it at runtime, Pages is not rebuilt. */
-const SOURCES = [
-  import.meta.env.VITE_ESPORTS_URL as string | undefined,
-  'https://raw.githubusercontent.com/vsemvamdam/rush-b/esports-data/esports.json',
-  'https://cdn.jsdelivr.net/gh/vsemvamdam/rush-b@esports-data/esports.json',
-].filter(Boolean) as string[];
-
-type Team = { n: string; f?: string; tbd?: boolean };
-type Book = { b: string; o: [number, number]; at?: number };
-type Odds = { books: Book[]; best: [number, number]; bestBy: [string, string]; prob: [number, number]; fav: 0 | 1 | null; at?: number; closed?: boolean };
-type Stream = { p: string; u: string };
-type Match = {
-  id: string; t1: Team; t2: Team; start: number; status: 'live' | 'upcoming' | 'finished'; approx?: boolean; bo?: number;
-  score?: [number, number]; winner?: 1 | 2; tour: string; stage?: string; tp?: string; tier?: string; streams?: Stream[]; odds?: Odds;
-};
-type Tournament = {
-  id: string; name: string; short?: string; tier?: string; tiertype?: string; start?: string; end?: string; prize?: number; cur?: string;
-  city?: string; country?: string; venue?: string; type?: 'lan' | 'online' | 'mixed'; teams?: number; org?: string; major?: boolean;
-  status: 'ongoing' | 'upcoming' | 'finished'; url: string; m?: { up: number; live: number; done: number };
-};
-type Source = { ok: boolean; at: number | null; n?: number; total?: number; error?: string };
-type Data = {
-  v: 1; updated: number; books: Record<string, string>; matches: Match[]; tournaments: Tournament[];
-  sources: { liquipedia: Source; polymarket?: Source; oddspapi?: Source & { key: boolean; books: string[]; used?: number; limit?: number; every?: number } };
-};
-
-async function loadData(): Promise<Data> {
-  let lastErr: unknown;
-  for (const url of SOURCES) {
-    try {
-      const r = await fetch(url, { cache: 'no-cache' });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const d = (await r.json()) as Data;
-      if (d?.v !== 1 || !Array.isArray(d.matches)) throw new Error('неверный формат');
-      return d;
-    } catch (e) {
-      lastErr = e;
-    }
-  }
-  throw lastErr;
-}
-
-function useEsports() {
-  const [s, set] = useState<{ data: Data | null; error: string | null; loading: boolean }>({ data: null, error: null, loading: true });
-  const reload = useCallback(() => {
-    loadData().then(
-      (data) => set({ data, error: null, loading: false }),
-      (e) => set((p) => ({ data: p.data, error: String(e?.message || e), loading: false })),
-    );
-  }, []);
-  useEffect(() => {
-    reload();
-    const t = window.setInterval(reload, 5 * 60 * 1000);
-    const vis = () => document.visibilityState === 'visible' && reload();
-    document.addEventListener('visibilitychange', vis);
-    return () => { clearInterval(t); document.removeEventListener('visibilitychange', vis); };
-  }, [reload]);
-  return { ...s, reload };
-}
-
-function useNow(ms = 30000) {
-  const [now, set] = useState(() => Date.now() / 1000);
-  useEffect(() => {
-    const t = window.setInterval(() => set(Date.now() / 1000), ms);
-    return () => clearInterval(t);
-  }, [ms]);
-  return now;
-}
 
 // ── formatting ─────────────────────────────────────────────────────────────
 const plural = (n: number, f: [string, string, string]) => {
@@ -222,7 +153,7 @@ export default function Esports() {
     if (!data) return [];
     return data.matches.filter((m) => {
       if (tier && (tier === 'C' ? !m.tier || 'SAB'.includes(m.tier) : m.tier !== tier)) return false;
-      if (tour && m.tp !== tour && m.tour !== tour) return false;
+      if (tour && m.tp !== tour && !m.tp?.startsWith(tour + '/') && m.tour !== tour) return false;
       if (onlyOdds && !m.odds) return false;
       if (!tour && m.t1.tbd && m.t2.tbd && m.status !== 'finished') return false; // empty bracket slots — only on a tournament's list
       return textOk(m);
@@ -237,9 +168,13 @@ export default function Esports() {
     const m = new Map<string, { id: string; name: string; tier?: string; n: number }>();
     for (const x of data.matches) {
       const id = x.tp || x.tour;
-      const o = m.get(id) || { id, name: x.tour, tier: x.tier, n: 0 };
-      o.n++;
-      m.set(id, o);
+      const parents = data.tournaments.filter((t) => x.tp?.startsWith(t.id + '/'));
+      const name = parents.length ? `${x.tour} · ${id.split('/').at(-1)}` : x.tour;
+      for (const entry of [{ id, name, tier: x.tier }, ...parents]) {
+        const option = m.get(entry.id) || { id: entry.id, name: entry.name, tier: entry.tier, n: 0 };
+        option.n++;
+        m.set(entry.id, option);
+      }
     }
     return [...m.values()].sort((a, b) => (a.tier || 'Z').localeCompare(b.tier || 'Z') || a.name.localeCompare(b.name));
   }, [data]);
@@ -254,7 +189,11 @@ export default function Esports() {
       </div>
     );
 
-  const stale = now - data.updated > 2 * 3600;
+  const updated = tab === 'm' ? data.sources.liquipedia.at : data.updated;
+  const stale = updated != null && now - updated > MATCH_SCHEDULE_MAX_AGE;
+  const scheduleMissing = tab === 'm' && data.matches.length === 0;
+  const scheduleFailed = tab === 'm' && !data.sources.liquipedia.ok;
+  const fallbackTour = scheduleMissing && (data.tournaments.find((t) => t.id === tour) || data.tournaments.find((t) => t.status === 'ongoing' && t.tier === 'S'));
   const op = data.sources.oddspapi;
   const pm = data.sources.polymarket;
   const anyOdds = data.matches.some((m) => m.odds);
@@ -268,8 +207,8 @@ export default function Esports() {
           <h1>Турниры и матчи</h1>
           <p className="muted">Расписание, live и результаты про-матчей CS2 с коэффициентами букмекеров. Время — ваше местное.</p>
         </div>
-        <div className={'es-upd' + (stale ? ' stale' : '')} title={new Date(data.updated * 1000).toLocaleString('ru-RU')}>
-          <span className="dot" /> обновлено {ago(data.updated, now)}
+        <div className={'es-upd' + (stale || scheduleMissing || scheduleFailed ? ' stale' : '')} title={updated != null ? new Date(updated * 1000).toLocaleString('ru-RU') : undefined}>
+          <span className="dot" /> {scheduleMissing ? 'расписание недоступно' : `обновлено ${ago(updated, now)}`}
         </div>
       </div>
 
@@ -302,19 +241,26 @@ export default function Esports() {
         </div>
       </div>
 
-      {stale && <div className="notice warn">Данные давно не обновлялись ({ago(data.updated, now)}) — расписание и счёт могли измениться.</div>}
-      {!data.sources.liquipedia.ok && <div className="notice warn">Liquipedia сейчас не отвечает — показаны данные последнего удачного обновления.</div>}
+      {stale && <div className="notice warn">Данные давно не обновлялись ({ago(updated, now)}) — расписание и счёт могли измениться.</div>}
+      {scheduleFailed && !scheduleMissing && <div className="notice warn">Не удалось обновить матчи. Показано последнее доступное расписание.</div>}
 
       <div className="es-layout">
+        {tab === 'm' && <OngoingTours data={data} />}
         <div className="es-main">
           {tab === 'm' && (
             <div className="es-disc"><span className="es-18">18+</span> Коэффициенты — справочно, не реклама и не рекомендация к ставкам.</div>
           )}
-          {tab === 'm' ? <MatchesView matches={matches} data={data} now={now} anyOdds={anyOdds} /> : <ToursView tours={tours} now={now} />}
+          {scheduleMissing ? (
+            <div className="empty card stack">
+              <p>Расписание матчей временно недоступно.</p>
+              <a className="link" href={fallbackTour ? fallbackTour.url : 'https://liquipedia.net/counterstrike/Liquipedia:Matches'} target="_blank" rel="noreferrer">
+                {fallbackTour ? `${fallbackTour.name} на Liquipedia` : 'Матчи на Liquipedia'} ↗
+              </a>
+            </div>
+          ) : tab === 'm' ? <MatchesView matches={matches} data={data} now={now} anyOdds={anyOdds} /> : <ToursView tours={tours} now={now} />}
         </div>
         <aside className="es-aside">
           {tab === 'm' && <OddsNote data={data} now={now} op={op} pm={pm} />}
-          {tab === 'm' && <OngoingTours data={data} />}
           <div className="card pad stack small es-src">
             <h3>Источники</h3>
             <p className="muted">
@@ -357,8 +303,8 @@ function OngoingTours({ data }: { data: Data }) {
   const list = data.tournaments.filter((t) => t.status === 'ongoing' && t.tier && 'SA'.includes(t.tier)).slice(0, 5);
   if (!list.length) return null;
   return (
-    <div className="card stack es-ongoing">
-      <div className="card-head"><h3>Идут сейчас</h3><button className="btn small ghost" onClick={() => setQuery({ tab: 't', t: null })}>Все турниры</button></div>
+    <section className="card stack es-ongoing" aria-labelledby="ongoing-tours">
+      <div className="card-head"><h2 id="ongoing-tours">Идут сейчас</h2><button className="btn small ghost" onClick={() => setQuery({ tab: 't', t: null })}>Все турниры</button></div>
       {list.map((t) => (
         <button key={t.id} className="es-ongoing-row" onClick={() => setQuery({ tab: null, t: t.id })}>
           <TierBadge tier={t.tier} />
@@ -370,7 +316,7 @@ function OngoingTours({ data }: { data: Data }) {
           {t.m?.up ? <span className="tiny muted nowrap">{t.m.up} {plural(t.m.up, ['матч', 'матча', 'матчей'])}</span> : null}
         </button>
       ))}
-    </div>
+    </section>
   );
 }
 
